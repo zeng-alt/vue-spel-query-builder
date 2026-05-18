@@ -143,7 +143,7 @@ const formatResult = (result: any): string => {
         </n-button>
         <n-button type="success" @click="handleRunClick">
           <template #icon>
-            <div class="i-carbon-play" />
+            <i class="i-carbon:play text-800"/>
           </template>
           运行表达式
         </n-button>
