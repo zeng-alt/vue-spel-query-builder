@@ -6,6 +6,7 @@ export interface SpelEditorProps {
   disabled?: boolean
   readonly?: boolean
   height?: string | number
+  theme?: 'dark' | 'light'
 }
 
 export interface SpelEditorEmits {

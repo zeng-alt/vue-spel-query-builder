@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { SpelEditor } from '../src'
 import type { SpelEditorInstance } from '../src'
 
@@ -16,10 +16,34 @@ const authentication = reactive({
   authenticated: true,
 })
 
+const authenticationText = ref(JSON.stringify(authentication, null, 2))
+
+watch(authenticationText, (val) => {
+  try {
+    const parsed = JSON.parse(val)
+
+    Object.assign(locals, parsed)
+  } catch {
+    // JSON 格式错误时不更新
+  }
+})
+
 const principal = reactive({
   id: '12345',
   username: 'john_doe',
   enabled: true,
+})
+
+const principalText = ref(JSON.stringify(principal, null, 2))
+
+watch(principalText, (val) => {
+  try {
+    const parsed = JSON.parse(val)
+
+    Object.assign(locals, parsed)
+  } catch {
+    // JSON 格式错误时不更新
+  }
 })
 
 const locals = reactive({
@@ -33,6 +57,18 @@ const locals = reactive({
     amount: 100.50,
     status: 'completed',
   },
+})
+
+const localsText = ref(JSON.stringify(locals, null, 2))
+
+watch(localsText, (val) => {
+  try {
+    const parsed = JSON.parse(val)
+
+    Object.assign(locals, parsed)
+  } catch {
+    // JSON 格式错误时不更新
+  }
 })
 
 const runResult = ref<{ result?: any; error?: string }>()
@@ -91,13 +127,13 @@ const formatResult = (result: any): string => {
 <template>
   <div class="p-6 max-w-4xl mx-auto">
     <h2 class="text-2xl font-bold text-gray-800 mb-6">SpEL Editor 示例</h2>
-    
+
     <div class="mb-8">
       <h3 class="text-lg font-semibold text-gray-700 mb-4">SpEL 表达式编辑器</h3>
       <p class="text-gray-500 mb-4">
         基于 CodeMirror 的 SpEL 表达式编辑器，支持语法高亮、智能提示和表达式运行。
       </p>
-      
+
       <div class="flex gap-3 mb-4">
         <n-button type="primary" @click="handleValidateClick">
           <template #icon>
@@ -118,7 +154,7 @@ const formatResult = (result: any): string => {
           获取当前值
         </n-button>
       </div>
-      
+
       <div class="border border-gray-200 rounded-lg overflow-hidden">
         <SpelEditor
           ref="editorRef"
@@ -130,9 +166,10 @@ const formatResult = (result: any): string => {
           @validate="handleValidate"
           @change="handleChange"
           @run="handleRun"
+          theme="light"
         />
       </div>
-      
+
       <div v-if="runResult" class="mt-4 p-4 rounded-lg border" :class="runResult.error ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'">
         <div class="flex items-center gap-2 mb-2">
           <span class="text-lg">
@@ -160,13 +197,13 @@ const formatResult = (result: any): string => {
           <pre class="font-mono text-sm bg-white p-3 rounded border border-gray-200 overflow-x-auto">{{ formatResult(runResult.result) }}</pre>
         </div>
       </div>
-      
+
       <div class="mt-4 p-3 bg-gray-50 rounded">
         <h4 class="text-sm font-medium text-gray-600 mb-2">当前表达式：</h4>
         <code class="font-mono text-sm text-gray-800">{{ spelExpression }}</code>
       </div>
     </div>
-    
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
         <div class="flex items-center gap-2 mb-3">
@@ -174,28 +211,28 @@ const formatResult = (result: any): string => {
           <h3 class="text-lg font-semibold text-blue-700">authentication</h3>
         </div>
         <p class="text-sm text-blue-600 mb-2">用户认证信息</p>
-        <pre class="font-mono text-sm text-blue-800 bg-blue-100/50 p-2 rounded">{{ JSON.stringify(authentication, null, 2) }}</pre>
+        <n-input type="textarea" autosize v-model:value="authenticationText"/>
       </div>
-      
+
       <div class="p-4 bg-green-50 rounded-lg border border-green-100">
         <div class="flex items-center gap-2 mb-3">
           <span class="text-2xl"><span class="i-carbon-key text-green-500" /></span>
           <h3 class="text-lg font-semibold text-green-700">principal</h3>
         </div>
         <p class="text-sm text-green-600 mb-2">基础变量信息</p>
-        <pre class="font-mono text-sm text-green-800 bg-green-100/50 p-2 rounded">{{ JSON.stringify(principal, null, 2) }}</pre>
+        <n-input type="textarea" autosize v-model:value="principalText"/>
       </div>
-      
+
       <div class="p-4 bg-purple-50 rounded-lg border border-purple-100">
         <div class="flex items-center gap-2 mb-3">
           <span class="text-2xl"><span class="i-carbon-variable text-purple-500" /></span>
           <h3 class="text-lg font-semibold text-purple-700">locals</h3>
         </div>
         <p class="text-sm text-purple-600 mb-2">本地变量 (使用 # 前缀)</p>
-        <pre class="font-mono text-sm text-purple-800 bg-purple-100/50 p-2 rounded">{{ JSON.stringify(locals, null, 2) }}</pre>
+        <n-input type="textarea" autosize v-model:value="localsText"/>
       </div>
     </div>
-    
+
     <div class="mt-8 p-4 bg-gray-50 rounded-lg">
       <h3 class="text-lg font-semibold text-gray-700 mb-3">使用示例</h3>
       <ul class="text-sm text-gray-600 space-y-2">
