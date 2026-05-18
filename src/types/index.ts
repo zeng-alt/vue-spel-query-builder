@@ -16,13 +16,27 @@ export interface SpelEditorEmits {
   (e: 'run', result: any, error?: string): void
 }
 
+export type ValueSource = 'value' | 'field' | 'function'
+export type FieldSource = 'field' | 'function'
+export type LogicalOperator = 'and' | 'or' | 'not'
+
+export interface FunctionArgument {
+  type: ValueSource
+  value?: any
+  functionArgument?: FunctionArgument
+}
+
 export interface RuleNode {
   id: string
   type: 'group' | 'condition'
-  operator?: 'and' | 'or'
+  operator?: LogicalOperator
   field?: string
+  fieldSource?: FieldSource
+  functionArgument?: FunctionArgument
   comparator?: string
   value?: any
+  valueSource?: ValueSource
+  valueFunctionArgument?: FunctionArgument
   children?: RuleNode[]
 }
 
@@ -47,6 +61,13 @@ export interface Comparator {
   value: string
   label: string
   types: string[]
+}
+
+export interface FieldOption {
+  label: string
+  value: string
+  type?: string
+  children?: FieldOption[]
 }
 
 export interface SpelEditorInstance {

@@ -35,11 +35,12 @@ defineExpose<RuleTreeInstance>({
 </script>
 
 <template>
-  <div class="p-3">
+  <div class="rule-tree-container">
     <RuleTreeNode
       :node="modelValue"
       :context="context"
       :disabled="disabled"
+      :level="0"
       @add-condition="addCondition"
       @add-group="addGroup"
       @remove-node="removeNode"
@@ -47,3 +48,12 @@ defineExpose<RuleTreeInstance>({
     />
   </div>
 </template>
+
+<style scoped>
+.rule-tree-container {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  min-height: 200px;
+}
+</style>

@@ -1,5 +1,5 @@
 import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
-import type { RuleNode } from '../types'
+import type { RuleNode, LogicalOperator, FunctionArgument } from '../types'
 
 export function generateId(): string {
   return `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -27,61 +27,134 @@ export function evalSpelExpression(expression: string, context: Record<string, a
   }
 }
 
+function formatFunctionArgument(arg?: FunctionArgument): string {
+  if (!arg) return ''
+  switch (arg.type) {
+    case 'value':
+      return formatSpelValue(arg.value)
+    case 'field':
+      const field = arg.value as string
+      return field.startsWith('#') ? field : `#${field}`
+    case 'function':
+      let funcName = (arg.value as string) || ''
+      if (funcName.endsWith('()')) {
+        funcName = funcName.slice(0, -2)
+      }
+      const nestedArg = formatFunctionArgument(arg.functionArgument)
+      return `${funcName}(${nestedArg})`
+    default:
+      return ''
+  }
+}
+
 export function ruleNodeToSpel(node: RuleNode): string {
   if (node.type === 'condition') {
     if (!node.field || !node.comparator) {
       return ''
     }
-    const field = `#${node.field}`
-    const value = formatSpelValue(node.value)
+    const field = formatField(node.field, node.fieldSource, node.functionArgument)
+    const value = formatValue(node.value, node.valueSource, node.valueFunctionArgument)
 
+    let expression = ''
     switch (node.comparator) {
       case '==':
-        return `${field} == ${value}`
+        expression = `${field} == ${value}`
+        break
       case '!=':
-        return `${field} != ${value}`
+        expression = `${field} != ${value}`
+        break
       case '>':
-        return `${field} > ${value}`
+        expression = `${field} > ${value}`
+        break
       case '>=':
-        return `${field} >= ${value}`
+        expression = `${field} >= ${value}`
+        break
       case '<':
-        return `${field} < ${value}`
+        expression = `${field} < ${value}`
+        break
       case '<=':
-        return `${field} <= ${value}`
-      case 'contains':
-        return `${field}.contains(${value})`
-      case 'startsWith':
-        return `${field}.startsWith(${value})`
-      case 'endsWith':
-        return `${field}.endsWith(${value})`
-      case 'matches':
-        return `${field}.matches(${value})`
+        expression = `${field} <= ${value}`
+        break
       case 'isEmpty':
-        return `${field} == null || ${field}.isEmpty()`
+        expression = `${field} == null || ${field}.isEmpty()`
+        break
       case 'isNotEmpty':
-        return `${field} != null && !${field}.isEmpty()`
-      case 'in':
-        return `${value}.contains(${field})`
-      case 'not in':
-        return `!${value}.contains(${field})`
+        expression = `${field} != null && !${field}.isEmpty()`
+        break
       default:
-        return `${field} ${node.comparator} ${value}`
+        expression = `${field} ${node.comparator} ${value}`
     }
+
+    return expression
   }
   else if (node.type === 'group' && node.children && node.children.length > 0) {
-    const operator = node.operator === 'or' ? ' || ' : ' && '
     const childrenExpressions = node.children
       .map(ruleNodeToSpel)
       .filter(exp => exp.trim() !== '')
+
     if (childrenExpressions.length === 0) {
       return ''
     }
+
     if (childrenExpressions.length === 1) {
+      // Apply NOT operator if set
+      if (node.operator === 'not') {
+        return `!(${childrenExpressions[0]})`
+      }
       return childrenExpressions[0]
     }
-    return `(${childrenExpressions.join(operator)})`
+
+    // Multiple children - use AND or OR
+    const operator = node.operator === 'or' ? ' || ' : ' && '
+    const combined = `(${childrenExpressions.join(operator)})`
+
+    // Apply NOT operator if set
+    if (node.operator === 'not') {
+      return `!${combined}`
+    }
+
+    return combined
   }
   return ''
+}
+
+function formatField(field: string, fieldSource?: string, functionArgument?: FunctionArgument): string {
+  if (fieldSource === 'function') {
+    // Handle functions with arguments
+    let funcName = field
+    if (funcName.endsWith('()')) {
+      funcName = funcName.slice(0, -2)
+    }
+    if (functionArgument) {
+      const argExpr = formatFunctionArgument(functionArgument)
+      return `${funcName}(${argExpr})`
+    }
+    // Ensure it has parentheses if it's a function without arguments
+    return `${funcName}()`
+  }
+  // For fields, add # prefix if not already present
+  return field.startsWith('#') ? field : `#${field}`
+}
+
+function formatValue(value: any, valueSource?: string, functionArgument?: FunctionArgument): string {
+  if (valueSource === 'field') {
+    return value.startsWith('#') ? value : `#${value}`
+  }
+  if (valueSource === 'function') {
+    // Handle functions with arguments
+    let funcName = value as string || ''
+    if (funcName.endsWith('()')) {
+      funcName = funcName.slice(0, -2)
+    }
+    if (functionArgument) {
+      const argExpr = formatFunctionArgument(functionArgument)
+      return `${funcName}(${argExpr})`
+    }
+    // Ensure it has parentheses if it's a function without arguments
+    return `${funcName}()`
+  }
+  // Default: value source
+  return formatSpelValue(value)
 }
 
 function formatSpelValue(value: any): string {
@@ -95,7 +168,7 @@ function formatSpelValue(value: any): string {
     return value.toString()
   }
   if (Array.isArray(value)) {
-    return `{${value.map(v => formatSpelValue(v)).join(', ')}}`
+    return `{${value.map(formatSpelValue).join(', ')}}`
   }
   return String(value)
 }
@@ -104,10 +177,12 @@ export function createEmptyCondition(): RuleNode {
   return {
     id: generateId(),
     type: 'condition',
+    fieldSource: 'field',
+    valueSource: 'value',
   }
 }
 
-export function createEmptyGroup(operator: 'and' | 'or' = 'and'): RuleNode {
+export function createEmptyGroup(operator: LogicalOperator = 'and'): RuleNode {
   return {
     id: generateId(),
     type: 'group',

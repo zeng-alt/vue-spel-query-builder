@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { NTabPane, NTabs } from 'naive-ui'
 import SpelEditorExample from './SpelEditorExample.vue'
+import RuleTreeExample from './RuleTreeExample.vue'
+
+const activeTab = ref('spel-editor')
 </script>
 
 <template>
@@ -10,7 +15,14 @@ import SpelEditorExample from './SpelEditorExample.vue'
     </header>
     
     <main class="flex-1 bg-white m-6 rounded-xl shadow-sm overflow-hidden">
-      <SpelEditorExample />
+      <NTabs v-model:value="activeTab" type="line" animated>
+        <NTabPane name="spel-editor" tab="SpEL 编辑器">
+          <SpelEditorExample />
+        </NTabPane>
+        <NTabPane name="rule-tree" tab="规则树">
+          <RuleTreeExample />
+        </NTabPane>
+      </NTabs>
     </main>
     
     <footer class="bg-gray-50 py-4 text-center text-gray-500 text-sm">
