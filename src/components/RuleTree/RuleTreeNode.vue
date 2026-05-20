@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { RuleNode, FieldOption, ValueSource, FieldSource, LogicalOperator, FunctionArgument } from '../../types'
+import { computed, ref, watchEffect } from 'vue'
+import type { RuleNode, FieldOption, LogicalOperator, Expression } from '../../types'
+import ExpressionEditor from './ExpressionEditor.vue'
+import { formatExpression } from '../../utils'
+import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
 
 const props = defineProps<{
   node: RuleNode
-  context?: Record<string, any>
+  authentication?: Record<string, any>
+  principal?: Record<string, any>
+  locals?: Record<string, any>
   disabled?: boolean
   level?: number
 }>()
@@ -17,481 +22,404 @@ const emit = defineEmits<{
 }>()
 
 const level = props.level ?? 0
+const isEditing = ref(false)
 
 const handleAddCondition = () => emit('add-condition', props.node.id)
 const handleAddGroup = () => emit('add-group', props.node.id)
 const handleRemove = () => emit('remove-node', props.node.id)
-const handleUpdate = (updates: Partial<RuleNode>) => emit('update-node', props.node.id, updates)
 
-interface FunctionOption {
-  label: string
-  value: string
-  needsArgument: boolean
-  argumentType?: 'string' | 'number' | 'field'
+function handleUpdate(updates: Partial<RuleNode>) {
+  emit('update-node', props.node.id, updates)
 }
 
+// ─── Field options ───────────────────────────────────────────────────────────
 const fieldOptions = computed<FieldOption[]>(() => {
-  if (!props.context) return []
-  return buildFieldOptions(props.context)
+  const result: FieldOption[] = []
+  if (props.authentication) result.push(...buildFieldOptions(props.authentication, 'authentication'))
+  if (props.principal)      result.push(...buildFieldOptions(props.principal, 'principal'))
+  if (props.locals)         result.push(...buildFieldOptions(props.locals, '#'))
+  return result
 })
 
-const functionOptions: FunctionOption[] = [
-  { label: 'length()', value: 'length()', needsArgument: false },
-  { label: 'size()', value: 'size()', needsArgument: false },
-  { label: 'toUpperCase()', value: 'toUpperCase()', needsArgument: false },
-  { label: 'toLowerCase()', value: 'toLowerCase()', needsArgument: false },
-  { label: 'trim()', value: 'trim()', needsArgument: false },
-  { label: 'abs()', value: 'abs()', needsArgument: false },
-  { label: 'round()', value: 'round()', needsArgument: false },
-  { label: 'startsWith()', value: 'startsWith', needsArgument: true, argumentType: 'string' },
-  { label: 'endsWith()', value: 'endsWith', needsArgument: true, argumentType: 'string' },
-  { label: 'contains()', value: 'contains', needsArgument: true, argumentType: 'string' },
-]
+function flattenFields(opts: FieldOption[]): Array<{ label: string; value: string }> {
+  const result: Array<{ label: string; value: string }> = []
+  for (const opt of opts) {
+    if (opt.children?.length) {
+      result.push(...flattenFields(opt.children as FieldOption[]))
+    } else {
+      result.push({ label: opt.value as string, value: opt.value as string })
+    }
+  }
+  return result
+}
 
 function buildFieldOptions(obj: Record<string, any>, prefix = ''): FieldOption[] {
   const options: FieldOption[] = []
   for (const [key, value] of Object.entries(obj)) {
-    const fullPath = prefix ? `${prefix}.${key}` : key
+    const fullPath = prefix
+      ? prefix === '#' ? `${prefix}${key}` : `${prefix}.${key}`
+      : key
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-      options.push({
-        label: key,
-        value: fullPath,
-        type: 'object',
-        children: buildFieldOptions(value, fullPath)
-      })
+      options.push({ label: key, value: fullPath, type: 'object', children: buildFieldOptions(value, fullPath) })
     } else {
-      options.push({
-        label: key,
-        value: fullPath,
-        type: typeof value
-      })
+      options.push({ label: key, value: fullPath, type: typeof value })
     }
   }
   return options
 }
 
-const valueSourceOptions = [
-  { label: '值', value: 'value' },
-  { label: '字段', value: 'field' },
-  { label: '函数', value: 'function' },
+// ─── Logical operator options ─────────────────────────────────────────────────
+const logicalOperatorOptions = [
+  { label: '且', value: 'and' },
+  { label: '或', value: 'or'  },
+  { label: '非', value: 'not' },
 ]
 
-const fieldSourceOptions = [
-  { label: '字段', value: 'field' },
-  { label: '函数', value: 'function' },
-]
+const currentOperator = computed(() => props.node.operator ?? 'and')
+const hasValueInput = computed(
+  () => !!props.node.comparator &&
+    !['isEmpty', 'isNotEmpty', 'isNull', 'isNotNull'].includes(props.node.comparator)
+)
 
-const comparatorOptions = [
-  { label: '==', value: '==' },
-  { label: '!=', value: '!=' },
-  { label: '>', value: '>' },
-  { label: '>=', value: '>=' },
-  { label: '<', value: '<' },
-  { label: '<=', value: '<=' },
-]
+// ─── Runtime type detection for left expression ──────────────────────────────
+const leftType = ref<string | null>(null)
 
-const logicalOperatorOptions = computed(() => {
-  const childrenCount = props.node.children?.length ?? 0
-  if (childrenCount <= 1) {
+watchEffect(() => {
+  if (props.node.type !== 'condition' || !props.node.left) {
+    leftType.value = null
+    return
+  }
+  const exprStr = formatExpression(props.node.left)
+  if (!exprStr) {
+    leftType.value = null
+    return
+  }
+  try {
+    const context = StandardContext.create(props.authentication, props.principal)
+    const result = SpelExpressionEvaluator.eval(exprStr, context, props.locals)
+    if (result === null || result === undefined) {
+      leftType.value = 'null'
+    } else {
+      leftType.value = typeof result
+    }
+  } catch {
+    leftType.value = null
+  }
+})
+
+const availableComparators = computed(() => {
+  const type = leftType.value
+
+  // 所有类型都可用
+  const base = [
+    { label: '==', value: '==' },
+    { label: '!=', value: '!=' },
+    { label: 'isNull', value: 'isNull' },
+    { label: 'isNotNull', value: 'isNotNull' },
+  ]
+
+  if (!type) {
     return [
-      { label: '且', value: 'and' },
-      { label: '或', value: 'or' },
-      { label: '非', value: 'not' },
+      ...base,
+      { label: '>', value: '>' },
+      { label: '>=', value: '>=' },
+      { label: '<', value: '<' },
+      { label: '<=', value: '<=' },
+      { label: 'isEmpty', value: 'isEmpty' },
+      { label: 'isNotEmpty', value: 'isNotEmpty' },
     ]
   }
-  return [
-    { label: '且', value: 'and' },
-    { label: '或', value: 'or' },
-    { label: '非', value: 'not' },
-  ]
+
+  switch (type) {
+    case 'number':
+      return [
+        ...base,
+        { label: '>', value: '>' },
+        { label: '>=', value: '>=' },
+        { label: '<', value: '<' },
+        { label: '<=', value: '<=' },
+      ]
+    case 'string':
+      return [
+        ...base,
+        { label: 'isEmpty', value: 'isEmpty' },
+        { label: 'isNotEmpty', value: 'isNotEmpty' },
+      ]
+    case 'boolean':
+      return base
+    case 'object':
+    case 'array':
+    case 'null':
+      return [
+        ...base,
+        { label: 'isEmpty', value: 'isEmpty' },
+        { label: 'isNotEmpty', value: 'isNotEmpty' },
+      ]
+    default:
+      return base
+  }
 })
 
-const currentOperator = computed(() => {
-  return props.node.operator ?? 'and'
+watchEffect(() => {
+  if (props.node.type !== 'condition') return
+  const allowedValues = availableComparators.value.map(c => c.value)
+  if (props.node.comparator && !allowedValues.includes(props.node.comparator)) {
+    handleUpdate({ comparator: '' })
+  }
 })
 
-const currentFieldFunction = computed(() => {
-  if (props.node.fieldSource !== 'function' || !props.node.field) return null
-  return functionOptions.find(f => props.node.field?.startsWith(f.value))
+// ─── Summary display ─────────────────────────────────────────────────────────
+const isConfigured = computed(() => {
+  if (props.node.type !== 'condition') return false
+  return !!(props.node.left && props.node.comparator)
 })
 
-const needsFieldFunctionArgument = computed(() => {
-  return currentFieldFunction.value?.needsArgument ?? false
+const summaryExpression = computed(() => {
+  if (props.node.type !== 'condition') return { left: '', op: '', right: '' }
+  return {
+    left: formatExpression(props.node.left),
+    op: props.node.comparator ?? '',
+    right: props.node.right ? formatExpression(props.node.right) : '',
+  }
 })
 
-const currentValueFunction = computed(() => {
-  if (props.node.valueSource !== 'function' || !props.node.value) return null
-  return functionOptions.find(f => props.node.value?.startsWith(f.value))
-})
-
-const needsValueFunctionArgument = computed(() => {
-  return currentValueFunction.value?.needsArgument ?? false
-})
-
+// ─── Handlers ────────────────────────────────────────────────────────────────
 function handleOperatorChange(value: LogicalOperator) {
   handleUpdate({ operator: value })
 }
 
-function handleFieldSourceChange(source: FieldSource) {
-  handleUpdate({ fieldSource: source, field: undefined, functionArgument: undefined })
+function updateLeft(expr: Expression) {
+  handleUpdate({ left: expr })
 }
 
-function handleValueSourceChange(source: ValueSource) {
-  handleUpdate({ valueSource: source, value: undefined, valueFunctionArgument: undefined })
+function updateRight(expr: Expression) {
+  handleUpdate({ right: expr })
 }
 
-function handleFieldFunctionSelect(option: FunctionOption) {
-  const newArg: FunctionArgument | undefined = option.needsArgument ? { type: 'value' } : undefined
-  handleUpdate({ field: option.value, functionArgument: newArg })
+function updateComparator(value: string) {
+  handleUpdate({ comparator: value })
 }
 
-function handleValueFunctionSelect(option: FunctionOption) {
-  const newArg: FunctionArgument | undefined = option.needsArgument ? { type: 'value' } : undefined
-  handleUpdate({ value: option.value, valueFunctionArgument: newArg })
+function toggleEdit() {
+  if (!props.disabled) isEditing.value = !isEditing.value
 }
 
-function handleFieldFunctionArgumentTypeChange(type: ValueSource) {
-  if (!props.node.functionArgument) return
-  handleUpdate({
-    functionArgument: {
-      type,
-      value: undefined,
-      functionArgument: undefined,
-    },
-  })
+function closeEdit() {
+  isEditing.value = false
 }
 
-function handleFieldFunctionArgumentValueChange(value: any) {
-  if (!props.node.functionArgument) return
-  handleUpdate({
-    functionArgument: {
-      ...props.node.functionArgument,
-      value,
-    },
-  })
-}
-
-function handleValueFunctionArgumentTypeChange(type: ValueSource) {
-  if (!props.node.valueFunctionArgument) return
-  handleUpdate({
-    valueFunctionArgument: {
-      type,
-      value: undefined,
-      functionArgument: undefined,
-    },
-  })
-}
-
-function handleValueFunctionArgumentValueChange(value: any) {
-  if (!props.node.valueFunctionArgument) return
-  handleUpdate({
-    valueFunctionArgument: {
-      ...props.node.valueFunctionArgument,
-      value,
-    },
-  })
+// ─── v-click-outside directive (ignores cascader/popover menus) ─────────────
+const vClickOutside = {
+  mounted(el: HTMLElement, binding: any) {
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (
+        target.closest('.n-cascader-menu') ||
+        target.closest('.n-popover-shared') ||
+        target.closest('.v-binder-follower-content')
+      ) {
+        return
+      }
+      if (!el.contains(target) && el !== target) {
+        binding.value(event)
+      }
+    }
+    ;(el as any).__clickOutsideHandler = handler
+    document.addEventListener('click', handler, true)
+  },
+  unmounted(el: HTMLElement) {
+    document.removeEventListener('click', (el as any).__clickOutsideHandler, true)
+    delete (el as any).__clickOutsideHandler
+  },
 }
 </script>
 
 <template>
-  <div v-if="node.type === 'condition'" class="flex items-center gap-2 py-2 px-3 bg-white rounded border border-gray-200 hover:border-blue-400 transition-colors">
-    <n-select
-      :value="node.fieldSource ?? 'field'"
-      :options="fieldSourceOptions"
-      placeholder="类型…"
-      :disabled="disabled"
-      size="small"
-      class="w-20"
-      @update:value="handleFieldSourceChange"
-    />
-
-    <div v-if="(node.fieldSource === 'field' || !node.fieldSource) && fieldOptions.length > 0" class="flex items-center gap-1">
-      <n-cascader
-        :value="node.field"
-        :options="fieldOptions"
-        placeholder="字段…"
-        :disabled="disabled"
-        size="small"
-        class="w-40"
-        clearable
-        check-strategy="child"
-        @update:value="(value) => handleUpdate({ field: value as string })"
-      />
-    </div>
-
-    <div v-else-if="node.fieldSource === 'function'" class="flex items-center gap-1">
-      <n-select
-        :value="node.field"
-        :options="functionOptions"
-        placeholder="函数…"
-        :disabled="disabled"
-        size="small"
-        class="w-40"
-        @update:value="(value) => {
-          const option = functionOptions.find(f => f.value === value)
-          if (option) handleFieldFunctionSelect(option)
-        }"
-      />
-      <div v-if="needsFieldFunctionArgument && node.functionArgument" class="flex items-center gap-1">
-        <span>(</span>
-        <n-select
-          :value="node.functionArgument.type"
-          :options="valueSourceOptions"
-          :disabled="disabled"
-          size="small"
-          class="w-20"
-          @update:value="handleFieldFunctionArgumentTypeChange"
-        />
-        <n-input
-          v-if="node.functionArgument.type === 'value'"
-          :value="node.functionArgument.value"
-          placeholder="值…"
-          :disabled="disabled"
-          size="small"
-          class="w-28"
-          @update:value="handleFieldFunctionArgumentValueChange"
-        />
-        <n-cascader
-          v-else-if="node.functionArgument.type === 'field' && fieldOptions.length > 0"
-          :value="node.functionArgument.value"
-          :options="fieldOptions"
-          placeholder="字段…"
-          :disabled="disabled"
-          size="small"
-          class="w-40"
-          clearable
-          check-strategy="child"
-          @update:value="handleFieldFunctionArgumentValueChange"
-        />
-        <n-select
-          v-else-if="node.functionArgument.type === 'function'"
-          :value="node.functionArgument.value"
-          :options="functionOptions"
-          placeholder="函数…"
-          :disabled="disabled"
-          size="small"
-          class="w-40"
-          @update:value="(value) => {
-            handleFieldFunctionArgumentValueChange(value)
-            const option = functionOptions.find(f => f.value === value)
-            if (option?.needsArgument) {
-              handleUpdate({
-                functionArgument: {
-                  ...node.functionArgument,
-                  functionArgument: { type: 'value' },
-                },
-              })
-            }
-          }"
-        />
-        <span>)</span>
-      </div>
-    </div>
-
-    <n-select
-      :value="node.comparator"
-      :options="comparatorOptions"
-      placeholder="操作…"
-      :disabled="disabled"
-      size="small"
-      class="w-16"
-      @update:value="(value) => handleUpdate({ comparator: value as string })"
-    />
-
-    <n-select
-      v-if="node.comparator && !['isEmpty', 'isNotEmpty'].includes(node.comparator)"
-      :value="node.valueSource ?? 'value'"
-      :options="valueSourceOptions"
-      placeholder="值类型…"
-      :disabled="disabled"
-      size="small"
-      class="w-20"
-      @update:value="handleValueSourceChange"
-    />
-
-    <n-input
-      v-if="node.comparator && !['isEmpty', 'isNotEmpty'].includes(node.comparator) && node.valueSource === 'value'"
-      :value="node.value"
-      placeholder="值…"
-      :disabled="disabled"
-      size="small"
-      class="flex-1 min-w-24"
-      @update:value="(value) => handleUpdate({ value })"
-    />
-
-    <div v-else-if="node.comparator && !['isEmpty', 'isNotEmpty'].includes(node.comparator) && node.valueSource === 'field' && fieldOptions.length > 0" class="flex-1 min-w-24">
-      <n-cascader
-        :value="node.value"
-        :options="fieldOptions"
-        placeholder="值字段…"
-        :disabled="disabled"
-        size="small"
-        class="w-full"
-        clearable
-        check-strategy="child"
-        @update:value="(value) => handleUpdate({ value })"
-      />
-    </div>
-
-    <div v-else-if="node.comparator && !['isEmpty', 'isNotEmpty'].includes(node.comparator) && node.valueSource === 'function'" class="flex items-center gap-1 flex-1 min-w-24">
-      <n-select
-        :value="node.value"
-        :options="functionOptions"
-        placeholder="值函数…"
-        :disabled="disabled"
-        size="small"
-        class="w-40"
-        @update:value="(value) => {
-          const option = functionOptions.find(f => f.value === value)
-          if (option) handleValueFunctionSelect(option)
-        }"
-      />
-      <div v-if="needsValueFunctionArgument && node.valueFunctionArgument" class="flex items-center gap-1">
-        <span>(</span>
-        <n-select
-          :value="node.valueFunctionArgument.type"
-          :options="valueSourceOptions"
-          :disabled="disabled"
-          size="small"
-          class="w-20"
-          @update:value="handleValueFunctionArgumentTypeChange"
-        />
-        <n-input
-          v-if="node.valueFunctionArgument.type === 'value'"
-          :value="node.valueFunctionArgument.value"
-          placeholder="值…"
-          :disabled="disabled"
-          size="small"
-          class="w-28"
-          @update:value="handleValueFunctionArgumentValueChange"
-        />
-        <n-cascader
-          v-else-if="node.valueFunctionArgument.type === 'field' && fieldOptions.length > 0"
-          :value="node.valueFunctionArgument.value"
-          :options="fieldOptions"
-          placeholder="字段…"
-          :disabled="disabled"
-          size="small"
-          class="w-40"
-          clearable
-          check-strategy="child"
-          @update:value="handleValueFunctionArgumentValueChange"
-        />
-        <n-select
-          v-else-if="node.valueFunctionArgument.type === 'function'"
-          :value="node.valueFunctionArgument.value"
-          :options="functionOptions"
-          placeholder="函数…"
-          :disabled="disabled"
-          size="small"
-          class="w-40"
-          @update:value="(value) => {
-            handleValueFunctionArgumentValueChange(value)
-          }"
-        />
-        <span>)</span>
-      </div>
-    </div>
-
-    <n-button
-      type="error"
-      size="small"
-      quaternary
-      circle
-      :disabled="disabled"
-      @click="handleRemove"
-      aria-label="删除条件"
+  <!-- CONDITION ROW -->
+  <div
+    v-if="node.type === 'condition'"
+    v-click-outside="closeEdit"
+    class="rounded-md border overflow-hidden transition-all duration-150"
+    :class="[
+      isEditing
+        ? 'border-blue-400 bg-white shadow-sm'
+        : 'border-gray-200 bg-white hover:border-gray-300',
+      disabled ? 'opacity-60 pointer-events-none' : '',
+    ]"
+  >
+    <!-- Summary line -->
+    <div
+      class="group/row flex items-center gap-1.5 px-2.5 min-h-[34px] cursor-pointer select-none overflow-hidden"
+      @click="toggleEdit"
     >
-      <template #icon>
-        <span class="i-carbon:trash-can text-xs" />
+      <span class="i-carbon:rule text-[11px] text-gray-300 flex-shrink-0" />
+
+      <template v-if="isConfigured">
+        <span class="expr-chip expr-chip--field font-mono text-[11px] flex-1 min-w-0">
+          {{ summaryExpression.left || '?' }}
+        </span>
+        <span v-if="summaryExpression.op" class="expr-chip expr-chip--op text-[11px] font-semibold flex-shrink-0">
+          {{ summaryExpression.op }}
+        </span>
+        <span v-if="summaryExpression.right" class="expr-chip expr-chip--val font-mono text-[11px] flex-1 min-w-0">
+          {{ summaryExpression.right }}
+        </span>
+        <span v-else-if="hasValueInput" class="text-[11px] text-gray-300 tracking-widest">···</span>
       </template>
-    </n-button>
+      <span v-else class="text-xs text-gray-300 italic">点击配置条件…</span>
+
+      <n-button
+        class="!ml-auto opacity-0 group-hover/row:opacity-100 transition-opacity duration-100 flex-shrink-0"
+        text size="tiny" type="error" :disabled="disabled"
+        @click.stop="handleRemove"
+      >
+        <template #icon><span class="i-carbon:close text-xs" /></template>
+      </n-button>
+    </div>
+
+    <!-- Edit panel -->
+    <Transition name="slide-down">
+      <div
+        v-if="isEditing"
+        class="border-t border-gray-100 bg-gray-50/80 px-3 py-3 space-y-2"
+        @click.stop
+      >
+        <div class="flex items-start gap-2 flex-wrap">
+          <!-- Left expression -->
+          <div class="expr-block">
+            <div class="expr-block__label">左侧</div>
+            <div class="expr-block__body">
+              <ExpressionEditor
+                :model-value="node.left ?? { type: 'field', path: '' }"
+                :field-options="fieldOptions"
+                :disabled="disabled"
+                :allow-literal="false"
+                @update:model-value="updateLeft"
+              />
+            </div>
+          </div>
+
+          <!-- Comparator -->
+          <div class="expr-block">
+            <div class="expr-block__label">操作符</div>
+            <div class="expr-block__body">
+              <n-select
+                :value="node.comparator"
+                :options="availableComparators"
+                placeholder="…"
+                :disabled="disabled"
+                size="small"
+                class="!w-[108px]"
+                @update:value="updateComparator"
+              />
+            </div>
+          </div>
+
+          <!-- Right expression -->
+          <div v-if="hasValueInput" class="expr-block">
+            <div class="expr-block__label">右侧</div>
+            <div class="expr-block__body">
+              <ExpressionEditor
+                :model-value="node.right ?? { type: 'literal', value: ''}"
+                :field-options="fieldOptions"
+                :disabled="disabled"
+                :allow-literal="true"
+                @update:model-value="updateRight"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div
+          v-if="isConfigured"
+          class="flex items-center gap-1.5 px-2 py-1.5 rounded bg-white border border-gray-100"
+        >
+          <span class="i-carbon:code text-gray-300 text-xs flex-shrink-0" />
+          <code class="text-[11px] text-gray-500 leading-none">
+            <span class="text-blue-600">{{ summaryExpression.left || '…' }}</span>
+            <span v-if="summaryExpression.op" class="text-gray-600 mx-1">{{ summaryExpression.op }}</span>
+            <span v-if="summaryExpression.right" class="text-emerald-700">{{ summaryExpression.right }}</span>
+          </code>
+        </div>
+      </div>
+    </Transition>
   </div>
 
+  <!-- GROUP NODE -->
   <div
     v-else
-    class="group-node"
-    :style="{ marginLeft: level > 0 ? '20px' : '0' }"
+    class="relative"
+    :class="level > 0 ? 'ml-4' : ''"
   >
+    <div v-if="level > 0" class="group-connector" />
+
+    <!-- Group header -->
     <div class="flex items-center gap-2 mb-2">
-      <n-select
-        :value="currentOperator"
-        :options="logicalOperatorOptions"
-        :disabled="disabled"
-        size="small"
-        class="w-20"
-        @update:value="handleOperatorChange"
-      />
-
-      <n-divider vertical class="mx-1" />
-
-      <n-space size="small">
-        <n-button
-          type="primary"
-          size="small"
+      <div class="op-toggle">
+        <button
+          v-for="opt in logicalOperatorOptions"
+          :key="opt.value"
+          class="op-toggle__btn"
+          :class="{
+            'op-toggle__btn--and': currentOperator === 'and' && opt.value === 'and',
+            'op-toggle__btn--or':  currentOperator === 'or'  && opt.value === 'or',
+            'op-toggle__btn--not': currentOperator === 'not' && opt.value === 'not',
+            'op-toggle__btn--off': currentOperator !== opt.value,
+          }"
           :disabled="disabled"
-          @click="handleAddCondition"
-        >
-          <template #icon>
-            <span class="i-carbon:add" />
-          </template>
+          @click="handleOperatorChange(opt.value as LogicalOperator)"
+        >{{ opt.label }}</button>
+      </div>
+
+      <div class="flex-1" />
+
+      <div class="flex items-center gap-1">
+        <n-button size="small" :disabled="disabled" @click="handleAddCondition">
+          <template #icon><span class="i-carbon:add text-xs" /></template>
           条件
         </n-button>
-        <n-button
-          type="info"
-          size="small"
-          :disabled="disabled"
-          @click="handleAddGroup"
-        >
-          <template #icon>
-            <span class="i-carbon:folder-add" />
-          </template>
+        <n-button size="small" :disabled="disabled" @click="handleAddGroup">
+          <template #icon><span class="i-carbon:folder-add text-xs" /></template>
           分组
         </n-button>
-        <n-button
-          v-if="level > 0"
-          type="error"
-          size="small"
-          quaternary
-          circle
-          :disabled="disabled"
-          @click="handleRemove"
-          aria-label="删除分组"
-        >
-          <template #icon>
-            <span class="i-carbon:trash-can" />
-          </template>
-        </n-button>
-      </n-space>
+        <template v-if="level > 0">
+          <div class="w-px h-4 bg-gray-200 mx-0.5" />
+          <n-button
+            size="small" quaternary circle type="error"
+            :disabled="disabled" aria-label="删除分组"
+            @click="handleRemove"
+          >
+            <template #icon><span class="i-carbon:trash-can text-sm" /></template>
+          </n-button>
+        </template>
+      </div>
     </div>
 
-    <div class="relative">
-      <div
-        v-if="node.children && node.children.length > 0"
-        class="absolute left-0 top-0 bottom-0 w-px bg-gray-300"
-        :style="{ left: '10px' }"
-      />
-
-      <div class="flex flex-col gap-2 pl-5">
-        <RuleTreeNode
-          v-for="child in node.children"
-          :key="child.id"
-          :node="child"
-          :context="context"
-          :disabled="disabled"
-          :level="level + 1"
-          @add-condition="(id) => $emit('add-condition', id)"
-          @add-group="(id) => $emit('add-group', id)"
-          @remove-node="(id) => $emit('remove-node', id)"
-          @update-node="(id, updates) => $emit('update-node', id, updates)"
-        />
-
-        <div
-          v-if="!node.children || node.children.length === 0"
-          class="text-center py-6 text-gray-400 bg-gray-50 rounded border border-dashed border-gray-300"
-        >
-          <span class="i-carbon:add-circle text-2xl mx-auto mb-1 opacity-50 block" />
-          <p class="text-xs">暂无条件</p>
+    <!-- Group body -->
+    <div class="relative pl-5">
+      <div v-if="node.children && node.children.length > 0" class="group-vline" />
+      <div class="flex flex-col gap-1.5">
+        <template v-if="node.children && node.children.length > 0">
+          <div v-for="child in node.children" :key="child.id" class="relative">
+            <div class="group-hline" />
+            <RuleTreeNode
+              :node="child"
+              :authentication="authentication"
+              :principal="principal"
+              :locals="locals"
+              :disabled="disabled"
+              :level="level + 1"
+              @add-condition="(id) => $emit('add-condition', id)"
+              @add-group="(id) => $emit('add-group', id)"
+              @remove-node="(id) => $emit('remove-node', id)"
+              @update-node="(id, updates) => $emit('update-node', id, updates)"
+            />
+          </div>
+        </template>
+        <div v-else class="flex flex-col items-center justify-center py-6 rounded-md border border-dashed border-gray-200 text-gray-300">
+          <span class="i-carbon:add-alt text-xl mb-1" />
+          <p class="text-[11px]">暂无条件，点击右上方按钮添加</p>
         </div>
       </div>
     </div>
@@ -499,17 +427,124 @@ function handleValueFunctionArgumentValueChange(value: any) {
 </template>
 
 <style scoped>
-.group-node {
-  position: relative;
+/* Slide-down transition */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: max-height 0.2s ease, opacity 0.15s ease;
+  max-height: 400px;
+  overflow: hidden;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 
-.group-node::before {
-  content: '';
+/* Summary chips */
+.expr-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.expr-chip--field {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.expr-chip--op {
+  background: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+}
+.expr-chip--val {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* Edit panel blocks */
+.expr-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.expr-block__label {
+  font-size: 10px;
+  color: #9ca3af;
+  padding-left: 2px;
+  letter-spacing: 0.3px;
+}
+.expr-block__body {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 5px 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  min-height: 36px;
+}
+
+/* Operator toggle */
+.op-toggle {
+  display: inline-flex;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.op-toggle__btn {
+  padding: 0 12px;
+  height: 26px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  line-height: 1;
+}
+.op-toggle__btn:last-child { border-right: none; }
+.op-toggle__btn:disabled   { cursor: not-allowed; opacity: 0.5; }
+
+.op-toggle__btn--off:not(:disabled):hover {
+  background: #f9fafb;
+  color: #374151;
+}
+.op-toggle__btn--and { background: #1d4ed8; color: #ffffff; }
+.op-toggle__btn--or  { background: #d97706; color: #ffffff; }
+.op-toggle__btn--not { background: #dc2626; color: #ffffff; }
+
+/* Tree lines */
+.group-vline {
   position: absolute;
-  left: -10px;
-  top: 14px;
-  width: 10px;
+  left: 7px;
+  top: 0;
+  bottom: 12px;
+  width: 1px;
+  background: #e5e7eb;
+}
+.group-hline {
+  position: absolute;
+  left: -13px;
+  top: 17px;
+  width: 13px;
   height: 1px;
-  background-color: #d1d5db;
+  background: #e5e7eb;
+}
+.group-connector {
+  position: absolute;
+  left: -9px;
+  top: 17px;
+  width: 9px;
+  height: 1px;
+  background: #e5e7eb;
 }
 </style>

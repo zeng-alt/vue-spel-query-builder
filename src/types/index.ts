@@ -16,33 +16,81 @@ export interface SpelEditorEmits {
   (e: 'run', result: any, error?: string): void
 }
 
-export type ValueSource = 'value' | 'field' | 'function'
-export type FieldSource = 'field' | 'function'
-export type LogicalOperator = 'and' | 'or' | 'not'
-
+// ─── Function Argument ───────────────────────────────────────────────────────
+// Represents the argument passed to a method that requires one.
+// Can be a literal value, a field reference, or a nested method call.
 export interface FunctionArgument {
-  type: ValueSource
-  value?: any
-  functionArgument?: FunctionArgument
+  type: 'value' | 'field' | 'function'
+  value?: string // literal string / field path / method name
+  functionArgument?: FunctionArgument // nested arg when type === 'function'
 }
 
+// ─── Value source ────────────────────────────────────────────────────────────
+export type ValueSource = 'value' | 'field' | 'function'
+
+// ─── Field source ────────────────────────────────────────────────────────────
+// 'field'    → plain field reference,  e.g.  authentication.userId
+// 'function' → field + method call,    e.g.  authentication.userId.length()
+export type FieldSource = 'field' | 'function'
+
+// ─── Logical operator ────────────────────────────────────────────────────────
+export type LogicalOperator = 'and' | 'or' | 'not'
+
+// ─── Field option (for cascader) ─────────────────────────────────────────────
+export interface FieldOption {
+  label: string
+  value: string | number
+  type?: string
+  children?: FieldOption[]
+}
+
+export type Expression =
+  | { type: 'literal'; value: string } // 字面量，如 'admin'
+  | { type: 'field'; path: string } // 字段引用，如 authentication.name
+  | { type: 'function'; call: FunctionCall } // 函数调用
+
+// ── 函数调用：方法名 + 作用对象 + 实参列表 ──
+// types/rule.ts
+
+export interface FunctionCall {
+  method: string
+  base?: Expression // ← 改为可选，无调用方时省略
+  args: Expression[]
+}
+
+export interface FunctionDef {
+  label: string
+  value: string
+  argumentCount: number
+  hasBase: boolean
+  baseType?: string
+  returnType?: string
+}
+
+// ─── Rule node ───────────────────────────────────────────────────────────────
 export interface RuleNode {
   id: string
-  type: 'group' | 'condition'
+  type: 'condition' | 'group'
+
+  // ── Group-only ──────────────────────────────────────────────────────────
   operator?: LogicalOperator
-  field?: string
-  fieldSource?: FieldSource
-  functionArgument?: FunctionArgument
-  comparator?: string
-  value?: any
-  valueSource?: ValueSource
-  valueFunctionArgument?: FunctionArgument
   children?: RuleNode[]
+
+  // 条件左侧表达式（必有）
+  left?: Expression
+
+  // 比较符
+  comparator?: string
+
+  // 条件右侧表达式（isEmpty / isNotEmpty 时可省略）
+  right?: Expression
 }
 
 export interface RuleTreeProps {
   modelValue: RuleNode
-  context?: Record<string, any>
+  authentication?: Record<string, any>
+  principal?: Record<string, any>
+  locals?: Record<string, any>
   disabled?: boolean
 }
 
@@ -61,13 +109,6 @@ export interface Comparator {
   value: string
   label: string
   types: string[]
-}
-
-export interface FieldOption {
-  label: string
-  value: string
-  type?: string
-  children?: FieldOption[]
 }
 
 export interface SpelEditorInstance {

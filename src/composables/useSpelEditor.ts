@@ -22,7 +22,7 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
   }
 
   const handleValidate = async () => {
-    validation.value = validateSpelExpression(internalValue.value, props.locals)
+    validation.value = validateSpelExpression(internalValue.value)
     emit('validate', validation.value.valid, validation.value.error)
     return validation.value.valid
   }
@@ -32,7 +32,7 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
       const expression = internalValue.value
       const spelContext = StandardContext.create(props.authentication, props.principal)
       const result = SpelExpressionEvaluator.eval(expression, spelContext, props.locals)
-      
+
       emit('run', result, undefined)
       return result
     } catch (error) {
@@ -49,9 +49,12 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
 
   const getValue = () => internalValue.value
 
-  watch(() => props.modelValue, (newValue) => {
-    internalValue.value = newValue
-  })
+  watch(
+    () => props.modelValue,
+    (newValue) => {
+      internalValue.value = newValue
+    },
+  )
 
   return {
     internalValue,

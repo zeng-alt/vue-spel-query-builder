@@ -1,6 +1,6 @@
-import { computed, watch } from 'vue'
-import { generateId, ruleNodeToSpel, createEmptyCondition, createEmptyGroup } from '../utils'
+import { ruleNodeToSpel, createEmptyCondition, createEmptyGroup } from '../utils'
 import type { RuleNode, RuleTreeProps } from '../types'
+import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
 
 export function useRuleTree(props: RuleTreeProps, emit: any) {
   const getSpelExpression = () => {
@@ -85,10 +85,14 @@ export function useRuleTree(props: RuleTreeProps, emit: any) {
         return false
       }
       return true
-    }
-    catch {
+    } catch {
       return false
     }
+  }
+
+  const run = (props: RuleTreeProps, sepl: string) => {
+    const spelContext = StandardContext.create(props.authentication, props.principal)
+    return SpelExpressionEvaluator.eval(sepl, spelContext, props.locals)
   }
 
   return {
@@ -99,5 +103,6 @@ export function useRuleTree(props: RuleTreeProps, emit: any) {
     removeNode,
     updateNode,
     validate,
+    run,
   }
 }

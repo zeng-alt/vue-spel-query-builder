@@ -25,12 +25,6 @@ const context = reactive({
     status: 'completed',
     items: ['item1', 'item2'],
   },
-  authentication: {
-    details: {
-      name: 'John',
-      permissions: ['read', 'write', 'delete'],
-    },
-  },
 })
 
 const contextText = ref(JSON.stringify(context, null, 2))
@@ -45,6 +39,10 @@ watch(contextText, (val) => {
 })
 
 const disabled = ref(false)
+
+
+
+ruleTreeRef.value?.setSpelExpression("(authentication.details.name == '123456' && #user.name == '456' && (authentication.details.name == '11111' || principal.date == '2222222222'))")
 
 const spelExpression = computed(() => {
   return ruleTreeRef.value?.getSpelExpression() ?? ''
@@ -92,7 +90,7 @@ const handleChange = (rule) => {
           </NSwitch>
         </NSpace>
       </template>
-      
+
       <div class="mb-4 p-3 bg-blue-50 rounded border border-blue-100">
         <p class="text-sm text-blue-700">
           <span class="i-carbon-information text-blue-500 mr-2" />
@@ -132,12 +130,22 @@ const handleChange = (rule) => {
             </NButton>
           </NSpace>
         </div>
-        
+
         <div class="border border-gray-200 rounded-lg p-4 bg-white">
           <RuleTree
             ref="ruleTreeRef"
             v-model="ruleTreeData"
             :context="context"
+            :authentication="{
+              details: {
+                name: 'John',
+                permissions: ['read', 'write', 'delete'],
+              }
+            }"
+            :principal="{
+              date: '1111',
+            }"
+            :locals="context"
             :disabled="disabled"
           />
         </div>
@@ -153,7 +161,7 @@ const handleChange = (rule) => {
             复制
           </NButton>
         </div>
-        
+
         <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
           <code class="text-green-400 font-mono text-sm whitespace-pre">{{ spelExpression || '(空)' }}</code>
         </div>
@@ -178,7 +186,7 @@ const handleChange = (rule) => {
             <p class="text-sm text-gray-500">从下拉列表中选择一个上下文字段</p>
           </div>
         </div>
-        
+
         <div class="flex items-start gap-3">
           <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
             <span class="text-green-600 text-sm font-bold">2</span>
@@ -188,7 +196,7 @@ const handleChange = (rule) => {
             <p class="text-sm text-gray-500">选择比较操作符（等于、不等于、包含等）</p>
           </div>
         </div>
-        
+
         <div class="flex items-start gap-3">
           <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
             <span class="text-purple-600 text-sm font-bold">3</span>
@@ -198,7 +206,7 @@ const handleChange = (rule) => {
             <p class="text-sm text-gray-500">输入要比较的值</p>
           </div>
         </div>
-        
+
         <div class="flex items-start gap-3">
           <div class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center shrink-0 mt-0.5">
             <span class="text-orange-600 text-sm font-bold">4</span>
