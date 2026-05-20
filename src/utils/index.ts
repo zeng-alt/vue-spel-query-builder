@@ -34,7 +34,43 @@ export function ruleNodeToSpel(node: RuleNode): string {
   if (node.type === 'condition') {
     if (!node.left || !node.comparator) return ''
 
-    const leftExpr = formatExpression(node.left)
+    let leftExpr = formatExpression(node.left)
+
+    // 1. 应用列表过滤
+    if (node.listFilter && node.listFilter.comparator) {
+      const { comparator, fieldPath, value } = node.listFilter
+      let target = '#this'
+      if (fieldPath) target = `${fieldPath}`
+
+      switch (comparator) {
+        case 'isEmpty':
+          leftExpr = `${leftExpr}.?[${target} == null || ${target}.isEmpty()]`
+          break
+        case 'isNotEmpty':
+          leftExpr = `${leftExpr}.?[${target} != null && !${target}.isEmpty()]`
+          break
+        case 'isNull':
+          leftExpr = `${leftExpr}.?[${target} == null]`
+          break
+        case 'isNotNull':
+          leftExpr = `${leftExpr}.?[${target} != null]`
+          break
+        default: {
+          const filterVal = value ? formatExpression(value) : ''
+          leftExpr = `${leftExpr}.?[${target} ${comparator} ${filterVal}]`
+          break
+        }
+      }
+    }
+
+    // 2. 数组 count 操作符需要追加 .size()
+    if (node.comparator.startsWith('count ')) {
+      leftExpr = `${leftExpr}.size()`
+      const rightExpr = node.right ? formatExpression(node.right) : ''
+      const op = node.comparator.replace('count ', '')
+      return `${leftExpr} ${op} ${rightExpr}`
+    }
+
     const rightExpr = node.right ? formatExpression(node.right) : ''
 
     switch (node.comparator) {
@@ -58,6 +94,18 @@ export function ruleNodeToSpel(node: RuleNode): string {
         return `${leftExpr} == null`
       case 'isNotNull':
         return `${leftExpr} != null`
+      case 'count ==':
+        return `${leftExpr}.size() == ${rightExpr}`
+      case 'count !=':
+        return `${leftExpr}.size() != ${rightExpr}`
+      case 'count <':
+        return `${leftExpr}.size() < ${rightExpr}`
+      case 'count <=':
+        return `${leftExpr}.size() <= ${rightExpr}`
+      case 'count >':
+        return `${leftExpr}.size() > ${rightExpr}`
+      case 'count >=':
+        return `${leftExpr}.size() >= ${rightExpr}`
       default:
         return `${leftExpr} ${node.comparator} ${rightExpr}`
     }

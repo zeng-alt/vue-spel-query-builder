@@ -42,10 +42,12 @@ export interface FieldOption {
   value: string | number
   type?: string
   children?: FieldOption[]
+  elementType?: string
+  elementChildren?: FieldOption[] // 如果元素是对象，其内部字段树
 }
 
 export type Expression =
-  | { type: 'literal'; value: string } // 字面量，如 'admin'
+  | { type: 'literal'; value: string; literalType?: string } // 字面量，如 'admin'
   | { type: 'field'; path: string } // 字段引用，如 authentication.name
   | { type: 'function'; call: FunctionCall } // 函数调用
 
@@ -67,6 +69,12 @@ export interface FunctionDef {
   returnType?: string
 }
 
+export interface ListFilter {
+  comparator: string
+  value?: Expression // 右侧值（字面量），可选
+  fieldPath?: string // 对象元素时选择的字段路径
+}
+
 // ─── Rule node ───────────────────────────────────────────────────────────────
 export interface RuleNode {
   id: string
@@ -84,6 +92,8 @@ export interface RuleNode {
 
   // 条件右侧表达式（isEmpty / isNotEmpty 时可省略）
   right?: Expression
+
+  listFilter?: ListFilter // 列表筛选条件
 }
 
 export interface RuleTreeProps {

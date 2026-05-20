@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import type { Expression, FunctionCall, FunctionDef, FieldOption } from '../../types'
 
 // ─── 扩展的函数定义（增加 returnType） ────────────────────────
@@ -34,6 +34,7 @@ const props = withDefaults(defineProps<{
   allowLiteral?: boolean
   allowFunction?: boolean
   baseTypeFilter?: string     // 外部传入的调用方类型过滤条件
+  forceNumberInput?: boolean   // 新增
 }>(), {
   modelValue: () => ({ type: 'field', path: '' }),
   allowLiteral: true,
@@ -154,86 +155,126 @@ const literalPlaceholder = computed(() => {
   if (props.baseTypeFilter) return `输入${props.baseTypeFilter}值…`
   return '输入值…'
 })
+
+const safeLiteralValue = computed(() => {
+  if (props.modelValue.type === 'literal') {
+    return props.modelValue.value
+  }
+  return ''
+})
+
+watchEffect(() => {
+  if (props.forceNumberInput && props.modelValue.type !== 'literal') {
+    emit('update:modelValue', { type: 'literal', value: '' })
+  }
+})
 </script>
 
 <template>
   <div class="flex items-center gap-1">
-    <!-- 类型切换 -->
-    <n-select
-      :value="currentType"
-      :options="typeOptions"
-      size="small"
-      class="!w-[72px]"
-      :disabled="disabled"
-      @update:value="setType"
-    />
-
-    <!-- 字面量 -->
-    <template v-if="modelValue.type === 'literal'">
-      <n-input
-        :value="modelValue.value"
-        :placeholder="literalPlaceholder"
+    <template v-if="forceNumberInput">
+      <n-input-number
+        :value="safeLiteralValue !== '' ? Number(safeLiteralValue) : null"
+        placeholder="数字…"
         size="small"
         :disabled="disabled"
         class="!w-[120px]"
-        @update:value="updateLiteral"
+        @update:value="(v: number | null) => updateLiteral(String(v ?? ''))"
       />
     </template>
-
-    <!-- 字段（使用过滤后的树形字段） -->
-    <template v-else-if="modelValue.type === 'field'">
-      <n-cascader
-        :value="modelValue.path"
-        :options="filteredFieldOptions"
-        placeholder="选择字段…"
-        size="small"
-        :disabled="disabled"
-        class="!w-[160px]"
-        clearable
-        check-strategy="child"
-        @update:value="updateFieldPath"
-      />
-    </template>
-
-    <!-- 函数调用 -->
-    <template v-else-if="modelValue.type === 'function'">
-      <!-- 方法选择器（使用过滤后的函数列表） -->
+    <template v-else>
+      <!-- 类型切换 -->
       <n-select
-        :value="modelValue.call.method"
-        :options="filteredFunctionOptions"
-        placeholder="方法…"
+        :value="currentType"
+        :options="typeOptions"
         size="small"
+        class="!w-[72px]"
         :disabled="disabled"
-        class="!w-[130px]"
-        @update:value="onMethodChange"
+        @update:value="setType"
       />
 
-      <span class="text-gray-400 font-mono text-sm">(</span>
+      <!-- 字面量 -->
+      <template v-if="modelValue.type === 'literal'">
+        <template v-if="forceNumberInput">
+          <!-- 数字输入框 -->
+          <n-input-number
+            :value="Number(modelValue.value)"
+            placeholder="数字…"
+            size="small"
+            :disabled="disabled"
+            class="!w-[110px]"
+            @update:value="(v: number) => updateLiteral(String(v ?? ''))"
+          />
+        </template>
+        <template v-else>
 
-      <!-- 调用方（如果需要） -->
-      <template v-if="currentFunctionDef?.hasBase && modelValue.call.base">
-        <ExpressionEditor
-          :model-value="modelValue.call.base"
-          :field-options="filteredFieldOptions"
-          :base-type-filter="currentFunctionDef?.baseType"
-          :disabled="disabled"
-          @update:model-value="(v: Expression) => updateCall({ base: v })"
-        />
-        <span v-if="modelValue.call.args.length > 0" class="text-gray-400 font-mono text-sm">,</span>
+          <n-input
+            :value="modelValue.value"
+            :placeholder="literalPlaceholder"
+            size="small"
+            :disabled="disabled"
+            class="!w-[120px]"
+            @update:value="updateLiteral"
+          />
+        </template>
       </template>
 
-      <!-- 参数列表 -->
-      <template v-for="(arg, index) in modelValue.call.args" :key="'arg' + index">
-        <span v-if="index > 0 || (currentFunctionDef?.hasBase ? true : index > 0)" class="text-gray-400 font-mono text-sm">,</span>
-        <ExpressionEditor
-          :model-value="arg"
-          :field-options="filteredFieldOptions"
+      <!-- 字段（使用过滤后的树形字段） -->
+      <template v-else-if="modelValue.type === 'field'">
+        <n-cascader
+          :value="modelValue.path"
+          :options="filteredFieldOptions"
+          placeholder="选择字段…"
+          size="small"
           :disabled="disabled"
-          @update:model-value="(v: Expression) => updateArg(index, v)"
+          class="!w-[160px]"
+          clearable
+          check-strategy="child"
+          @update:value="updateFieldPath"
         />
       </template>
 
-      <span class="text-gray-400 font-mono text-sm">)</span>
+      <!-- 函数调用 -->
+      <template v-else-if="modelValue.type === 'function'">
+        <!-- 方法选择器（使用过滤后的函数列表） -->
+        <n-select
+          :value="modelValue.call.method"
+          :options="filteredFunctionOptions"
+          placeholder="方法…"
+          size="small"
+          :disabled="disabled"
+          class="!w-[130px]"
+          @update:value="onMethodChange"
+        />
+
+        <span class="text-gray-400 font-mono text-sm">(</span>
+
+        <!-- 调用方（如果需要） -->
+        <template v-if="currentFunctionDef?.hasBase && modelValue.call.base">
+          <ExpressionEditor
+            :model-value="modelValue.call.base"
+            :field-options="filteredFieldOptions"
+            :base-type-filter="currentFunctionDef?.baseType"
+            :disabled="disabled"
+            @update:model-value="(v: Expression) => updateCall({ base: v })"
+          />
+          <span v-if="modelValue.call.args.length > 0" class="text-gray-400 font-mono text-sm">,</span>
+        </template>
+
+        <!-- 参数列表 -->
+        <template v-for="(arg, index) in modelValue.call.args" :key="'arg' + index">
+          <span v-if="index > 0 || (currentFunctionDef?.hasBase ? true : index > 0)" class="text-gray-400 font-mono text-sm">,</span>
+          <ExpressionEditor
+            :model-value="arg"
+            :field-options="filteredFieldOptions"
+            :disabled="disabled"
+            @update:model-value="(v: Expression) => updateArg(index, v)"
+          />
+        </template>
+
+        <span class="text-gray-400 font-mono text-sm">)</span>
+      </template>
+
     </template>
   </div>
 </template>

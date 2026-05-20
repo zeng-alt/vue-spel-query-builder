@@ -16,7 +16,7 @@ const context = reactive({
     name: '张三',
     age: 28,
     email: 'zhangsan@example.com',
-    roles: ['admin', 'user'],
+    roles: [{code: 'admin', label: '管理员'}, {code: 'user', label: '普通用户'}],
     active: true,
   },
   order: {
