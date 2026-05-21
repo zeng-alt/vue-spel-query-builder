@@ -6,22 +6,26 @@ import type { Expression, FunctionCall, FunctionDef, FieldOption } from '../../t
 
 const FUNCTIONS: FunctionDef[] = [
   // 有调用方
-  { label: 'length()',      value: 'length',      argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'number' },
-  { label: 'size()',        value: 'size',        argumentCount: 0, hasBase: true, baseType: 'collection', returnType: 'number' },
-  { label: 'toUpperCase()', value: 'toUpperCase', argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
-  { label: 'toLowerCase()', value: 'toLowerCase', argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
-  { label: 'trim()',        value: 'trim',        argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
-  { label: 'abs()',         value: 'abs',         argumentCount: 0, hasBase: true, baseType: 'number', returnType: 'number' },
-  { label: 'round()',       value: 'round',       argumentCount: 0, hasBase: true, baseType: 'number', returnType: 'number' },
-  { label: 'startsWith()',  value: 'startsWith',  argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'boolean' },
-  { label: 'endsWith()',    value: 'endsWith',    argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'boolean' },
-  { label: 'contains()',    value: 'contains',    argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'boolean' },
-  { label: 'indexOf()',     value: 'indexOf',     argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'number' },
-  { label: 'charAt()',      value: 'charAt',      argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'length',        value: 'length',      argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'number' },
+  { label: 'empty',         value: 'empty',       argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'boolean' },
+  { label: 'size()',        value: 'size()',        argumentCount: 0, hasBase: true, baseType: 'collection', returnType: 'number' },
+  { label: 'toUpperCase()', value: 'toUpperCase()', argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'toLowerCase()', value: 'toLowerCase()', argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'trim()',        value: 'trim()',        argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'abs()',         value: 'abs()',         argumentCount: 0, hasBase: true, baseType: 'number', returnType: 'number' },
+  { label: 'round()',       value: 'round()',       argumentCount: 0, hasBase: true, baseType: 'number', returnType: 'number' },
+  { label: 'substring(x)',  value: 'substring({0})',  argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'substring(x, y)',  value: 'substring({0}, {1})',  argumentCount: 2, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'replace()',  value: 'replace({0}, {1})',  argumentCount: 2, hasBase: true, baseType: 'string', returnType: 'string' },
+  { label: 'startsWith()',  value: 'startsWith({0})',  argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'boolean' },
+  { label: 'endsWith()',    value: 'endsWith({0})',    argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'boolean' },
+  { label: 'contains()',    value: 'contains({0})',    argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'boolean' },
+  { label: 'indexOf()',     value: 'indexOf({0})',     argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'number' },
+  { label: 'charAt()',      value: 'charAt({0})',      argumentCount: 1, hasBase: true, baseType: 'string', returnType: 'string' },
   // 独立函数
-  { label: 'now()',         value: 'now',         argumentCount: 0, hasBase: false, returnType: 'date' },
-  { label: 'random()',      value: 'random',      argumentCount: 0, hasBase: false, returnType: 'number' },
-  { label: 'currentUser()', value: 'currentUser', argumentCount: 0, hasBase: false, returnType: 'string' },
+  { label: 'now()',         value: 'now()',         argumentCount: 0, hasBase: false, returnType: 'date' },
+  { label: 'random()',      value: 'random()',      argumentCount: 0, hasBase: false, returnType: 'number' },
+  { label: 'currentUser()', value: 'currentUser()', argumentCount: 0, hasBase: false, returnType: 'string' },
 ]
 
 const fullFunctionOptions = FUNCTIONS.map(f => ({ label: f.label, value: f.value }))

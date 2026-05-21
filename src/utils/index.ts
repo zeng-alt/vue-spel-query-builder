@@ -144,16 +144,21 @@ export function formatExpression(expr?: Expression): string {
       return expr.path
     case 'function': {
       const base = expr.call.base ? formatExpression(expr.call.base) : ''
-      const args = expr.call.args.map(formatExpression).join(', ')
-      // 有 base：base.method(args)；无 base：method(args)
+
       if (base) {
-        return `${base}.${expr.call.method}(${args})`
+        return `${base}.${format(expr.call.method, expr.call.args.map(formatExpression))}`
       }
-      return `${expr.call.method}(${args})`
+      return `${format(expr.call.method, expr.call.args.map(formatExpression))}`
     }
     default:
       return ''
   }
+}
+
+function format(template: string, args: string[]): string {
+  return template.replace(/\{(\d+)\}/g, (_, index) => {
+    return args[index] ?? ''
+  })
 }
 
 /**
