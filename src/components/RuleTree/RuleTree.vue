@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRuleTree } from '../../composables'
 import type { RuleTreeProps, RuleTreeEmits, RuleTreeInstance } from '../../types'
 import RuleTreeNode from './RuleTreeNode.vue'
+import { NConfigProvider } from 'naive-ui'
+import { darkTheme, lightTheme } from 'naive-ui'
 
 const props = withDefaults(defineProps<RuleTreeProps>(), {
   theme: 'light',
@@ -15,24 +18,28 @@ defineExpose<RuleTreeInstance>({
   setSpelExpression,
   validate,
 })
+
+const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTheme)
 </script>
 
 <template>
-  <div class="rule-tree-container" :class="`theme--${props.theme}`">
-    <RuleTreeNode
-      :node="modelValue"
-      :authentication="authentication"
-      :principal="principal"
-      :locals="locals"
-      :disabled="disabled"
-      :level="0"
-      :theme="props.theme"
-      @add-condition="addCondition"
-      @add-group="addGroup"
-      @remove-node="removeNode"
-      @update-node="updateNode"
-    />
-  </div>
+  <NConfigProvider :theme="currentTheme">
+    <div class="rule-tree-container" :class="`theme--${props.theme}`">
+      <RuleTreeNode
+        :node="modelValue"
+        :authentication="authentication"
+        :principal="principal"
+        :locals="locals"
+        :disabled="disabled"
+        :level="0"
+        :theme="props.theme"
+        @add-condition="addCondition"
+        @add-group="addGroup"
+        @remove-node="removeNode"
+        @update-node="updateNode"
+      />
+    </div>
+  </NConfigProvider>
 </template>
 
 <style scoped>

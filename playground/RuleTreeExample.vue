@@ -460,6 +460,7 @@ const handleChange = (rule) => {
 }
 </style>
 
+<style>
 /* ─── Toggle button (replaces NSwitch) ─────────────────────────── */
 .toggle-btn {
   display: inline-flex;

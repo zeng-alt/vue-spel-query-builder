@@ -496,8 +496,8 @@ const listFilterLiteralValue = computed(() => {
       </div>
       <div class="flex-1" />
       <div class="flex items-center gap-1">
-        <n-button size="small" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-xs" /></template>条件</n-button>
-        <n-button size="small" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-xs" /></template>分组</n-button>
+        <n-button class="action-btn" size="small" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-xs" /></template>条件</n-button>
+        <n-button class="action-btn" size="small" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-xs" /></template>分组</n-button>
         <template v-if="level > 0">
           <div class="w-px h-4 mx-0.5 divider" />
           <n-button size="small" quaternary circle type="error" :disabled="disabled" @click="handleRemove"><template #icon><span class="i-carbon:trash-can text-sm" /></template></n-button>
@@ -708,5 +708,19 @@ const listFilterLiteralValue = computed(() => {
 /* ─── Divider ──────────────────────────────────────────────────── */
 .divider {
   background: var(--divider-bg);
+}
+
+/* ─── Action buttons ───────────────────────────────────────────── */
+.action-btn {
+  background: rgba(34, 211, 238, 0.12) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+  color: #22d3ee !important;
+}
+.action-btn:hover {
+  background: rgba(34, 211, 238, 0.2) !important;
+  border-color: rgba(34, 211, 238, 0.4) !important;
+}
+.action-btn:disabled {
+  opacity: 0.5 !important;
 }
 </style>
