@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { NTabPane, NTabs, NButton, NConfigProvider, darkTheme, NTag } from 'naive-ui'
+import { NTabPane, NTabs, NButton, NConfigProvider, darkTheme } from 'naive-ui'
 import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
 
@@ -17,107 +17,163 @@ function toggleTheme() {
 <template>
   <NConfigProvider :theme="isDark ? darkTheme : undefined">
     <div class="min-h-screen flex flex-col app-root" :class="isDark ? 'theme--dark' : 'theme--light'">
-      <header class="py-6 px-6 text-center shadow-md header-bar">
-        <div class="flex items-center justify-center gap-4 mb-2">
-          <h1 class="text-3xl font-bold">Vue SpEL Query Builder</h1>
-          <NButton
-            size="small"
-            :type="isDark ? 'warning' : 'default'"
-            class="theme-toggle-btn"
-            @click="toggleTheme"
-          >
-            <template #icon>
-              <span :class="isDark ? 'i-carbon-sun' : 'i-carbon-moon'" class="text-sm" />
-            </template>
-            {{ isDark ? 'Light' : 'Dark' }}
-          </NButton>
+      <header class="header-bar">
+        <div class="header-inner">
+          <div class="header-left">
+            <span class="header-logo">⟨⟩</span>
+            <span class="header-title">SpEL Query Builder</span>
+          </div>
+          <div class="header-right">
+            <div class="tab-switch">
+              <button
+                class="tab-btn"
+                :class="{ active: activeTab === 'spel-editor' }"
+                @click="activeTab = 'spel-editor'"
+              >Editor</button>
+              <button
+                class="tab-btn"
+                :class="{ active: activeTab === 'rule-tree' }"
+                @click="activeTab = 'rule-tree'"
+              >Rule&nbsp;Tree</button>
+            </div>
+            <NButton
+              size="tiny"
+              class="theme-btn"
+              @click="toggleTheme"
+            >
+              <template #icon>
+                <span :class="isDark ? 'i-carbon-sun' : 'i-carbon-moon'" />
+              </template>
+            </NButton>
+          </div>
         </div>
-        <p class="text-base opacity-80">基于 Vue 3 + SpEL + CodeMirror + Naive UI 的在线编辑器和可视化规则树 UI</p>
       </header>
 
-      <main class="flex-1 mx-6 mb-6 rounded-xl shadow-sm overflow-hidden main-card">
-        <NTabs v-model:value="activeTab" type="line" animated>
-          <NTabPane name="spel-editor" tab="SpEL 编辑器">
-            <SpelEditorExample :theme="theme" />
-          </NTabPane>
-          <NTabPane name="rule-tree" tab="规则树">
-            <RuleTreeExample :theme="theme" />
-          </NTabPane>
-        </NTabs>
+      <main class="main-area">
+        <NTabPane v-if="activeTab === 'spel-editor'" tab="SpEL 编辑器">
+          <SpelEditorExample :theme="theme" />
+        </NTabPane>
+        <NTabPane v-if="activeTab === 'rule-tree'" tab="规则树">
+          <RuleTreeExample :theme="theme" />
+        </NTabPane>
       </main>
-
-      <footer class="py-4 text-center text-sm footer-bar">
-        <p>© 2024 Vue SpEL Query Builder</p>
-      </footer>
     </div>
   </NConfigProvider>
 </template>
 
 <style>
-/* ─── Reset & base ────────────────────────────────── */
 *,
 *::before,
-*::after {
-  box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   margin: 0;
   min-height: 100vh;
-  transition: background 0.25s, color 0.25s;
+  transition: background 0.2s;
 }
 
-/* ─── Light theme ─────────────────────────────────── */
+/* ─── Light ───────────────────────────────────────── */
 .app-root.theme--light {
-  --page-bg: #f0f2f5;
-  --main-card-bg: #ffffff;
-  --header-from: #6366f1;
-  --header-to: #a855f7;
-  --header-text: #ffffff;
-  --footer-bg: #f9fafb;
-  --footer-text: #9ca3af;
-  --tab-text: #374151;
+  --page-bg: #e8eaed;
+  --surface-bg: #ffffff;
+  --header-bg: #ffffff;
+  --header-border: #e0e0e0;
+  --header-fg: #1f1f1f;
+  --tab-btn-bg: #f0f0f0;
+  --tab-btn-active-bg: #1f1f1f;
+  --tab-btn-active-fg: #ffffff;
+  --tab-btn-fg: #555555;
 }
-.app-root.theme--light body {
-  background: var(--page-bg);
-}
+.app-root.theme--light body { background: var(--page-bg); }
 
-/* ─── AMOLED Pure Black dark theme ────────────────── */
+/* ─── AMOLED Pure Black ───────────────────────────── */
 .app-root.theme--dark {
   --page-bg: #000000;
-  --main-card-bg: #111111;
-  --header-from: #000000;
-  --header-to: #1a1a2e;
-  --header-text: #e0e0e0;
-  --footer-bg: #0a0a0a;
-  --footer-text: #555555;
-  --tab-text: #aaaaaa;
+  --surface-bg: #111111;
+  --header-bg: #000000;
+  --header-border: #1a1a1a;
+  --header-fg: #e0e0e0;
+  --tab-btn-bg: #1a1a1a;
+  --tab-btn-active-bg: #ffffff;
+  --tab-btn-active-fg: #000000;
+  --tab-btn-fg: #888888;
 }
-.app-root.theme--dark body {
-  background: var(--page-bg);
-}
+.app-root.theme--dark body { background: var(--page-bg); }
 
-/* ─── Layout ──────────────────────────────────────── */
+/* ─── Header ──────────────────────────────────────── */
 .header-bar {
-  background: linear-gradient(to right, var(--header-from), var(--header-to));
-  color: var(--header-text);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  color: var(--header-fg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
-.theme-toggle-btn {
-  flex-shrink: 0;
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.main-card {
-  background: var(--main-card-bg);
-  border: 1px solid color-mix(in srgb, var(--main-card-bg) 80%, #ffffff 20%);
-  transition: background 0.25s, border-color 0.25s;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.main-card :deep(.n-tabs-tab) {
-  color: var(--tab-text) !important;
-  transition: color 0.25s;
+.header-logo {
+  font-size: 20px;
+  font-weight: 700;
+  opacity: 0.6;
 }
-.footer-bar {
-  background: var(--footer-bg);
-  color: var(--footer-text);
-  transition: background 0.25s, color 0.25s;
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tab-switch {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--header-border);
+}
+.tab-btn {
+  border: none;
+  background: var(--tab-btn-bg);
+  color: var(--tab-btn-fg);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab-btn.active {
+  background: var(--tab-btn-active-bg);
+  color: var(--tab-btn-active-fg);
+}
+.tab-btn:not(.active):hover {
+  opacity: 0.8;
+}
+.theme-btn {
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.theme-btn:hover { opacity: 1; }
+
+/* ─── Main ────────────────────────────────────────── */
+.main-area {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  flex: 1;
 }
 </style>
