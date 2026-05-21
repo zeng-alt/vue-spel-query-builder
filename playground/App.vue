@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { NConfigProvider, NTabPane, NTabs, darkTheme } from 'naive-ui'
 import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
@@ -46,10 +46,10 @@ function toggleTheme() {
           <div class="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
             <NTabs v-model:value="activeTab" type="line" animated size="large">
               <NTabPane name="spel-editor" tab="SpEL 编辑器">
-                <SpelEditorExample />
+                <SpelEditorExample :theme="theme"/>
               </NTabPane>
               <NTabPane name="rule-tree" tab="规则树">
-                <RuleTreeExample />
+                <RuleTreeExample :theme="theme"/>
               </NTabPane>
             </NTabs>
           </div>
