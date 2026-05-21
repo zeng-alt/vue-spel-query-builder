@@ -1,0 +1,37 @@
+# Source files
+src/
+playground/
+
+# Config files
+vite.config.ts
+vite.lib.config.ts
+tsconfig.json
+tsconfig.node.json
+tsconfig.app.json
+uno.config.ts
+
+# Development files
+.vscode/
+.idea/
+*.log
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+tests/
+coverage/
+
+# Build tools
+.github/
+.eslintrc.cjs
+.eslintcache
+.prettierrc.json
+oxlint.json
+
+# Git
+.git/
+.gitignore
+
+# Other
+*.md
+!README.md

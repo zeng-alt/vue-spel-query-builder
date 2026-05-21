@@ -1,22 +1,36 @@
 {
   "name": "@zeng-alt/vue-spel-query-builder",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Vue3 SpEL Query Builder - A visual rule tree and code editor for SpEL expressions",
+  "author": "zeng-alt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zeng-alt/vue-spel-query-builder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zeng-alt/vue-spel-query-builder/issues"
+  },
+  "homepage": "https://github.com/zeng-alt/vue-spel-query-builder#readme",
   "type": "module",
   "keywords": [
     "vue3",
-    "spel"
+    "spel",
+    "query-builder",
+    "rule-engine",
+    "codemirror",
+    "naive-ui"
   ],
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.esm",
   "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.esm",
       "require": "./dist/index.cjs"
     },
-    "./style.css": "./dist/style.css"
+    "./style.css": "./dist/assets/vue-spel-query-builder.css"
   },
   "publishConfig": {
     "access": "public"
@@ -29,15 +43,17 @@
   ],
   "scripts": {
     "dev": "vite --config vite.config.ts",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "vite build --config vite.lib.config.ts",
+    "build:all": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview --config vite.config.ts",
     "test:unit": "vitest",
-    "build-only": "vite build",
+    "build-only": "vite build --config vite.lib.config.ts",
     "type-check": "vue-tsc --build",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "naive-ui": "^2.44.0",
