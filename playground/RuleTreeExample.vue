@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { NCard, NButton, NSpace, NSwitch, NText, NTag } from 'naive-ui'
+import { NCard, NButton, NSpace, NSwitch, NText } from 'naive-ui'
 import { RuleTree } from '../src'
 import type { RuleTreeInstance, RuleNode } from '../src'
 import { createEmptyGroup } from '../src'
+
+const props = defineProps<{
+  theme: 'light' | 'dark'
+}>()
 
 const ruleTreeRef = ref<RuleTreeInstance>()
 
@@ -39,7 +43,6 @@ watch(contextText, (val) => {
 })
 
 const disabled = ref(false)
-const theme = ref<'light' | 'dark'>('light')
 
 
 
@@ -81,17 +84,13 @@ const handleChange = (rule) => {
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-6 rule-tree-example" :class="props.theme === 'dark' ? 'theme--dark' : 'theme--light'">
     <NCard title="规则树组件示例" :bordered="false" class="mb-6">
       <template #header-extra>
         <NSpace>
-          <NTag :bordered="false" :type="theme === 'dark' ? 'info' : 'default'" size="small" class="!mr-1">
-            {{ theme === 'dark' ? 'Dark' : 'Light' }}
+          <NTag :bordered="false" :type="props.theme === 'dark' ? 'info' : 'default'" size="small" class="!mr-1">
+            {{ props.theme === 'dark' ? 'Dark' : 'Light' }}
           </NTag>
-          <NSwitch v-model:value="theme" size="small" :checked-value="'dark'" :unchecked-value="'light'">
-            <template #checked><span class="i-carbon-moon text-xs" /></template>
-            <template #unchecked><span class="i-carbon-sun text-xs" /></template>
-          </NSwitch>
           <NSwitch v-model:value="disabled" size="small">
             <template #checked>禁用</template>
             <template #unchecked>启用</template>
@@ -99,9 +98,9 @@ const handleChange = (rule) => {
         </NSpace>
       </template>
 
-      <div class="mb-4 p-3 bg-blue-50 rounded border border-blue-100">
-        <p class="text-sm text-blue-700">
-          <span class="i-carbon-information text-blue-500 mr-2" />
+      <div class="mb-4 p-3 rounded border info-banner">
+        <p class="text-sm info-banner-text">
+          <span class="i-carbon-information mr-2 info-banner-icon" />
           通过可视化界面构建 SpEL 查询规则树，生成布尔表达式的规则树。
         </p>
       </div>
@@ -139,11 +138,11 @@ const handleChange = (rule) => {
           </NSpace>
         </div>
 
-        <div class="border border-gray-200 rounded-lg p-4 bg-white">
+        <div class="border rounded-lg p-4 tree-wrapper">
           <RuleTree
             ref="ruleTreeRef"
             v-model="ruleTreeData"
-            :theme="theme"
+            :theme="props.theme"
             :context="context"
             :authentication="{
               details: {
@@ -171,8 +170,8 @@ const handleChange = (rule) => {
           </NButton>
         </div>
 
-        <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-          <code class="text-green-400 font-mono text-sm whitespace-pre">{{ spelExpression || '(空)' }}</code>
+        <div class="rounded-lg p-4 overflow-x-auto spel-block">
+          <code class="font-mono text-sm whitespace-pre">{{ spelExpression || '(空)' }}</code>
         </div>
       </div>
 
@@ -187,51 +186,174 @@ const handleChange = (rule) => {
     <NCard title="使用说明" :bordered="false" class="mb-6">
       <div class="space-y-3">
         <div class="flex items-start gap-3">
-          <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-            <span class="text-blue-600 text-sm font-bold">1</span>
+          <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 step-blue">
+            <span class="text-sm font-bold step-blue-text">1</span>
           </div>
           <div>
-            <p class="font-medium text-gray-700">选择字段</p>
-            <p class="text-sm text-gray-500">从下拉列表中选择一个上下文字段</p>
+            <p class="font-medium step-title">选择字段</p>
+            <p class="text-sm step-desc">从下拉列表中选择一个上下文字段</p>
           </div>
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
-            <span class="text-green-600 text-sm font-bold">2</span>
+          <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 step-green">
+            <span class="text-sm font-bold step-green-text">2</span>
           </div>
           <div>
-            <p class="font-medium text-gray-700">选择操作</p>
-            <p class="text-sm text-gray-500">选择比较操作符（等于、不等于、包含等）</p>
+            <p class="font-medium step-title">选择操作</p>
+            <p class="text-sm step-desc">选择比较操作符（等于、不等于、包含等）</p>
           </div>
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-            <span class="text-purple-600 text-sm font-bold">3</span>
+          <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 step-purple">
+            <span class="text-sm font-bold step-purple-text">3</span>
           </div>
           <div>
-            <p class="font-medium text-gray-700">输入值</p>
-            <p class="text-sm text-gray-500">输入要比较的值</p>
+            <p class="font-medium step-title">输入值</p>
+            <p class="text-sm step-desc">输入要比较的值</p>
           </div>
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center shrink-0 mt-0.5">
-            <span class="text-orange-600 text-sm font-bold">4</span>
+          <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 step-orange">
+            <span class="text-sm font-bold step-orange-text">4</span>
           </div>
           <div>
-            <p class="font-medium text-gray-700">组合条件</p>
-            <p class="text-sm text-gray-500">使用"且/或"操作符组合多个条件</p>
+            <p class="font-medium step-title">组合条件</p>
+            <p class="text-sm step-desc">使用"且/或"操作符组合多个条件</p>
           </div>
         </div>
       </div>
     </NCard>
 
     <NCard title="代码示例" :bordered="false">
-      <div class="bg-gray-50 rounded-lg p-4">
-        <pre class="text-sm text-gray-700 font-mono overflow-x-auto"><code>{{ codeExample }}</code></pre>
+      <div class="rounded-lg p-4 code-example">
+        <pre class="text-sm font-mono overflow-x-auto"><code>{{ codeExample }}</code></pre>
       </div>
     </NCard>
   </div>
 </template>
+
+
+<style scoped>
+/* ─── Light theme ──────────────────────────────────── */
+.rule-tree-example.theme--light {
+  --info-banner-bg: #eff6ff;
+  --info-banner-border: #bfdbfe;
+  --info-banner-text: #1d4ed8;
+  --info-banner-icon: #3b82f6;
+
+  --tree-wrapper-bg: #ffffff;
+  --tree-wrapper-border: #e5e7eb;
+
+  --spel-bg: #111827;
+  --spel-text: #34d399;
+
+  --step-blue-bg: #dbeafe;
+  --step-blue-text: #2563eb;
+  --step-green-bg: #d1fae5;
+  --step-green-text: #065f46;
+  --step-purple-bg: #ede9fe;
+  --step-purple-text: #6d28d9;
+  --step-orange-bg: #fed7aa;
+  --step-orange-text: #c2410c;
+  --step-text: #374151;
+  --step-desc: #6b7280;
+
+  --code-example-bg: #f9fafb;
+  --code-example-text: #374151;
+}
+
+/* ─── AMOLED Pure Black dark theme ─────────────────── */
+.rule-tree-example.theme--dark {
+  --info-banner-bg: #0d1b2a;
+  --info-banner-border: #1e3a5f;
+  --info-banner-text: #93c5fd;
+  --info-banner-icon: #60a5fa;
+
+  --tree-wrapper-bg: #0a0a0a;
+  --tree-wrapper-border: #222222;
+
+  --spel-bg: #000000;
+  --spel-text: #34d399;
+
+  --step-blue-bg: #0a1a2a;
+  --step-blue-text: #60a5fa;
+  --step-green-bg: #0a1a0a;
+  --step-green-text: #34d399;
+  --step-purple-bg: #140a1a;
+  --step-purple-text: #a78bfa;
+  --step-orange-bg: #1a100a;
+  --step-orange-text: #fb923c;
+  --step-text: #cccccc;
+  --step-desc: #888888;
+
+  --code-example-bg: #0a0a0a;
+  --code-example-text: #e0e0e0;
+}
+
+/* ─── Apply variables ──────────────────────────────── */
+.rule-tree-example :deep(.info-banner) {
+  background: var(--info-banner-bg);
+  border-color: var(--info-banner-border);
+}
+.rule-tree-example :deep(.info-banner-text) {
+  color: var(--info-banner-text);
+}
+.rule-tree-example :deep(.info-banner-icon) {
+  color: var(--info-banner-icon);
+}
+
+.rule-tree-example :deep(.tree-wrapper) {
+  background: var(--tree-wrapper-bg);
+  border-color: var(--tree-wrapper-border);
+}
+
+.rule-tree-example :deep(.spel-block) {
+  background: var(--spel-bg);
+}
+.rule-tree-example :deep(.spel-block code) {
+  color: var(--spel-text);
+}
+
+/* Step circles */
+.rule-tree-example :deep(.step-blue) {
+  background: var(--step-blue-bg);
+}
+.rule-tree-example :deep(.step-blue-text) {
+  color: var(--step-blue-text);
+}
+.rule-tree-example :deep(.step-green) {
+  background: var(--step-green-bg);
+}
+.rule-tree-example :deep(.step-green-text) {
+  color: var(--step-green-text);
+}
+.rule-tree-example :deep(.step-purple) {
+  background: var(--step-purple-bg);
+}
+.rule-tree-example :deep(.step-purple-text) {
+  color: var(--step-purple-text);
+}
+.rule-tree-example :deep(.step-orange) {
+  background: var(--step-orange-bg);
+}
+.rule-tree-example :deep(.step-orange-text) {
+  color: var(--step-orange-text);
+}
+.rule-tree-example :deep(.step-title) {
+  color: var(--step-text);
+}
+.rule-tree-example :deep(.step-desc) {
+  color: var(--step-desc);
+}
+
+.rule-tree-example :deep(.code-example) {
+  background: var(--code-example-bg);
+}
+.rule-tree-example :deep(.code-example pre),
+.rule-tree-example :deep(.code-example code) {
+  color: var(--code-example-text);
+}
+</style>
