@@ -125,10 +125,10 @@ const formatResult = (result: any): string => {
     <div class="editor-section">
       <div class="section-header">
         <div class="section-title">
-          <span class="i-carbon-terminal text-2xl text-cyan-400" />
+          <span class="i-carbon-terminal" />
           <div>
-            <h3 class="text-lg font-semibold text-white">表达式编辑器</h3>
-            <p class="text-sm text-gray-500">输入 SpEL 表达式进行验证和执行</p>
+            <h3 class="section-title-text">表达式编辑器</h3>
+            <p class="section-subtitle">输入 SpEL 表达式进行验证和执行</p>
           </div>
         </div>
         <div class="action-buttons">
@@ -179,13 +179,13 @@ const formatResult = (result: any): string => {
 
     <div class="context-section">
       <div class="context-header">
-        <span class="i-carbon-data-structured text-xl text-purple-400" />
-        <h3 class="text-base font-semibold text-white">上下文变量</h3>
+        <span class="i-carbon-data-structured" />
+        <h3 class="section-title-text">上下文变量</h3>
       </div>
       <div class="context-grid">
         <div class="context-panel">
           <div class="context-label">
-            <span class="i-carbon-id-management text-cyan-400" />
+            <span class="i-carbon-id-management" />
             <span>authentication</span>
           </div>
           <textarea
@@ -197,7 +197,7 @@ const formatResult = (result: any): string => {
         </div>
         <div class="context-panel">
           <div class="context-label">
-            <span class="i-carbon-user text-emerald-400" />
+            <span class="i-carbon-user" />
             <span>principal</span>
           </div>
           <textarea
@@ -209,7 +209,7 @@ const formatResult = (result: any): string => {
         </div>
         <div class="context-panel">
           <div class="context-label">
-            <span class="i-carbon-data-blob text-amber-400" />
+            <span class="i-carbon-data-blob" />
             <span>locals (#)</span>
           </div>
           <textarea
@@ -228,15 +228,15 @@ const formatResult = (result: any): string => {
 .spel-editor-example {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   padding: 0.5rem;
 }
 
 .editor-section {
-  background: var(--bg-card);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 1rem;
 }
 
 .section-header {
@@ -244,14 +244,27 @@ const formatResult = (result: any): string => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
   flex-wrap: wrap;
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
+}
+
+.section-title-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .action-buttons {
@@ -261,32 +274,32 @@ const formatResult = (result: any): string => {
 }
 
 .editor-wrapper {
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--border-secondary);
+  border: 1px solid var(--border-primary);
 }
 
 .result-section {
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid;
 }
 
 .result-success {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+  background: rgba(16, 185, 129, 0.05);
   border-color: rgba(16, 185, 129, 0.2);
 }
 
 .result-error {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+  background: rgba(239, 68, 68, 0.05);
   border-color: rgba(239, 68, 68, 0.2);
 }
 
 .result-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
   border-bottom: 1px solid;
 }
 
@@ -302,7 +315,7 @@ const formatResult = (result: any): string => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .result-info {
@@ -313,7 +326,7 @@ const formatResult = (result: any): string => {
 
 .result-title {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-primary);
 }
 
@@ -322,7 +335,7 @@ const formatResult = (result: any): string => {
 }
 
 .result-error .result-title {
-  color: var(--accent-red);
+  color: #ef4444;
 }
 
 .result-type {
@@ -333,10 +346,10 @@ const formatResult = (result: any): string => {
 
 .result-body {
   margin: 0;
-  padding: 1rem 1.25rem;
-  font-size: 0.875rem;
+  padding: 0.875rem 1rem;
+  font-size: 0.8125rem;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-x: auto;
@@ -347,34 +360,34 @@ const formatResult = (result: any): string => {
 }
 
 .result-error .result-body {
-  color: var(--accent-red);
+  color: #ef4444;
 }
 
 .context-section {
-  background: var(--bg-card);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 1rem;
 }
 
 .context-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
 }
 
 .context-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.875rem;
 }
 
 .context-panel {
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 8px;
+  padding: 0.875rem;
 }
 
 .context-label {
@@ -384,9 +397,8 @@ const formatResult = (result: any): string => {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin-bottom: 0.625rem;
+  letter-spacing: 0.025em;
 }
 
 /* ─── Editor buttons (replaces n-button) ───────────────────────── */
@@ -394,9 +406,9 @@ const formatResult = (result: any): string => {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.875rem;
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--bg-tertiary);
   color: var(--text-secondary);
   font-size: 0.8125rem;
@@ -410,19 +422,19 @@ const formatResult = (result: any): string => {
 
 .editor-btn:hover {
   border-color: var(--border-secondary);
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   color: var(--text-primary);
 }
 
 .editor-btn--primary {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
-  border-color: rgba(34, 211, 238, 0.2);
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.3);
   color: var(--accent-cyan);
 }
 
 .editor-btn--primary:hover {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
-  border-color: rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.4);
   color: var(--accent-cyan);
 }
 
@@ -430,24 +442,103 @@ const formatResult = (result: any): string => {
 .plain-textarea {
   display: block;
   width: 100%;
-  padding: 0.75rem;
+  box-sizing: border-box;
+  padding: 0.625rem 0.75rem;
+  padding-bottom: 1.5rem;
   background: var(--bg-secondary);
-  border: none;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
   color: var(--text-primary);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.8125rem;
-  line-height: 1.6;
+  line-height: 1.5;
   resize: vertical;
   outline: none;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  overflow: auto;
+  min-height: 100px;
+  max-height: 300px;
 }
 
 .plain-textarea::placeholder {
   color: var(--text-muted);
 }
 
+.plain-textarea:hover {
+  border-color: var(--accent-cyan);
+}
+
 .plain-textarea:focus {
-  background: var(--bg-tertiary);
+  border-color: var(--accent-cyan);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.1);
+}
+
+.plain-textarea::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.plain-textarea::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.plain-textarea::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 3px;
+}
+
+.plain-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+.plain-textarea::-webkit-resizer {
+  position: absolute;
+  width: 100%;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
+  border: none;
+  cursor: ns-resize;
+  bottom: 0;
+  left: 0;
+}
+
+.plain-textarea::-webkit-resizer::before {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.plain-textarea::-webkit-resizer::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.plain-textarea:hover::-webkit-resizer::before {
+  background: var(--accent-cyan);
+  height: 5px;
+}
+
+.plain-textarea:hover::-webkit-resizer::after {
+  background: var(--accent-cyan);
+  opacity: 0.7;
 }
 
 @media (max-width: 768px) {

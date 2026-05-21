@@ -79,8 +79,8 @@ const handleChange = (rule) => {
   <div class="rule-tree-example">
     <div class="info-banner">
       <div class="banner-content">
-        <span class="i-carbon-information text-cyan-400 text-xl" />
-        <p class="text-sm text-gray-300">
+        <span class="i-carbon-information text-cyan-400" />
+        <p class="banner-text">
           通过可视化界面构建 SpEL 查询规则树，生成布尔表达式的规则树。使用分组可以创建复杂的嵌套条件。
         </p>
       </div>
@@ -91,10 +91,10 @@ const handleChange = (rule) => {
         <div class="config-section">
           <div class="section-header">
             <div class="section-title">
-              <span class="i-carbon-settings text-xl text-amber-400" />
+              <span class="i-carbon-settings" />
               <div>
-                <h3 class="text-base font-semibold text-white">上下文配置</h3>
-                <p class="text-xs text-gray-500">提供字段供选择</p>
+                <h3 class="section-title-text">上下文配置</h3>
+                <p class="section-subtitle">提供字段供选择</p>
               </div>
             </div>
             <div class="control-group">
@@ -122,10 +122,10 @@ const handleChange = (rule) => {
         <div class="tree-section">
           <div class="section-header">
             <div class="section-title">
-              <span class="i-carbon-tree-view-alt text-xl text-emerald-400" />
+              <span class="i-carbon-tree-view-alt" />
               <div>
-                <h3 class="text-base font-semibold text-white">规则树</h3>
-                <p class="text-xs text-gray-500">构建查询条件</p>
+                <h3 class="section-title-text">规则树</h3>
+                <p class="section-subtitle">构建查询条件</p>
               </div>
             </div>
           </div>
@@ -155,10 +155,10 @@ const handleChange = (rule) => {
         <div class="output-section">
           <div class="section-header">
             <div class="section-title">
-              <span class="i-carbon-code text-xl text-pink-400" />
+              <span class="i-carbon-code" />
               <div>
-                <h3 class="text-base font-semibold text-white">生成的表达式</h3>
-                <p class="text-xs text-gray-500">SpEL 格式</p>
+                <h3 class="section-title-text">生成的表达式</h3>
+                <p class="section-subtitle">SpEL 格式</p>
               </div>
             </div>
             <button class="plain-btn" @click="handleCopyExpression">
@@ -174,8 +174,8 @@ const handleChange = (rule) => {
         <div class="actions-section">
           <div class="section-header">
             <div class="section-title">
-              <span class="i-carbon-tool-kit text-xl text-cyan-400" />
-              <h3 class="text-base font-semibold text-white">操作</h3>
+              <span class="i-carbon-tool-kit" />
+              <h3 class="section-title-text">操作</h3>
             </div>
           </div>
           <div class="actions-grid">
@@ -193,8 +193,8 @@ const handleChange = (rule) => {
         <div class="guide-section">
           <div class="section-header">
             <div class="section-title">
-              <span class="i-carbon-book text-xl text-purple-400" />
-              <h3 class="text-base font-semibold text-white">使用指南</h3>
+              <span class="i-carbon-book" />
+              <h3 class="section-title-text">使用指南</h3>
             </div>
           </div>
           <div class="guide-steps">
@@ -232,8 +232,8 @@ const handleChange = (rule) => {
         <div class="code-section">
           <div class="section-header">
             <div class="section-title">
-              <span class="i-carbon-application text-xl text-yellow-400" />
-              <h3 class="text-base font-semibold text-white">代码示例</h3>
+              <span class="i-carbon-application" />
+              <h3 class="section-title-text">代码示例</h3>
             </div>
           </div>
           <div class="code-display">
@@ -249,39 +249,41 @@ const handleChange = (rule) => {
 .rule-tree-example {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   padding: 0.5rem;
 }
 
 .info-banner {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+  background: rgba(34, 211, 238, 0.05);
   border: 1px solid rgba(34, 211, 238, 0.15);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
 }
 
 .banner-content {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
-.banner-content p {
+.banner-text {
   margin: 0;
   line-height: 1.5;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
 }
 
 .main-grid {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 1.25rem;
+  grid-template-columns: 1fr 380px;
+  gap: 1rem;
 }
 
 .left-column,
 .right-column {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .section-header {
@@ -289,22 +291,27 @@ const handleChange = (rule) => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
   flex-wrap: wrap;
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
-.section-header h3 {
+.section-title-text {
   margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.section-header p {
+.section-subtitle {
   margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .config-section,
@@ -313,10 +320,10 @@ const handleChange = (rule) => {
 .actions-section,
 .guide-section,
 .code-section {
-  background: var(--bg-card);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 1rem;
 }
 
 .control-group {
@@ -331,9 +338,82 @@ const handleChange = (rule) => {
 }
 
 .config-editor {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  overflow: auto;
+  border: 1px solid var(--border-primary);
+  box-sizing: border-box;
+}
+
+.config-editor .plain-textarea {
+  border-radius: 0;
+  border: none;
+}
+
+.config-editor .plain-textarea::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.config-editor .plain-textarea::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.config-editor .plain-textarea::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 3px;
+}
+
+.config-editor .plain-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+.config-editor .plain-textarea::-webkit-resizer {
+  position: absolute;
+  width: 100%;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
+  border: none;
+  cursor: ns-resize;
+  bottom: 0;
+  left: 0;
+}
+
+.config-editor .plain-textarea::-webkit-resizer::before {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.config-editor .plain-textarea::-webkit-resizer::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.config-editor .plain-textarea:hover::-webkit-resizer::before {
+  background: var(--accent-cyan);
+  height: 5px;
+}
+
+.config-editor .plain-textarea:hover::-webkit-resizer::after {
+  background: var(--accent-cyan);
+  opacity: 0.7;
 }
 
 .config-input {
@@ -342,27 +422,27 @@ const handleChange = (rule) => {
 }
 
 .tree-container {
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 8px;
+  padding: 0.875rem;
   min-height: 300px;
 }
 
 .output-display {
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 1rem;
-  min-height: 80px;
+  border-radius: 8px;
+  padding: 0.875rem;
+  min-height: 60px;
   overflow-x: auto;
 }
 
 .expression-code {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--accent-emerald);
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -370,35 +450,35 @@ const handleChange = (rule) => {
 .actions-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .guide-steps {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .guide-step {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: var(--bg-secondary);
+  gap: 0.625rem;
+  padding: 0.625rem;
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .step-number {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  background: var(--accent-cyan);
+  border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--bg-primary);
   flex-shrink: 0;
 }
@@ -408,10 +488,10 @@ const handleChange = (rule) => {
 }
 
 .step-title {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.125rem 0;
 }
 
 .step-desc {
@@ -422,10 +502,10 @@ const handleChange = (rule) => {
 }
 
 .code-display {
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 8px;
+  padding: 0.875rem;
   overflow-x: auto;
 }
 
@@ -466,9 +546,9 @@ const handleChange = (rule) => {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.625rem;
   border: 1px solid var(--border-primary);
-  border-radius: 9999px;
+  border-radius: 6px;
   background: var(--bg-tertiary);
   cursor: pointer;
   transition: all 0.2s;
@@ -477,7 +557,7 @@ const handleChange = (rule) => {
 }
 
 .toggle-btn--on {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.1);
   border-color: rgba(16, 185, 129, 0.3);
   color: var(--accent-emerald);
 }
@@ -491,7 +571,7 @@ const handleChange = (rule) => {
 .toggle-btn__dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 2px;
   transition: background 0.2s;
 }
 
@@ -513,9 +593,9 @@ const handleChange = (rule) => {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.875rem;
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--bg-tertiary);
   color: var(--text-secondary);
   font-size: 0.8125rem;
@@ -529,50 +609,129 @@ const handleChange = (rule) => {
 
 .plain-btn:hover {
   border-color: var(--border-secondary);
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   color: var(--text-primary);
 }
 
 .plain-btn--primary {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
-  border-color: rgba(34, 211, 238, 0.2);
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.3);
   color: var(--accent-cyan);
 }
 
 .plain-btn--primary:hover {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
-  border-color: rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.4);
   color: var(--accent-cyan);
 }
 
 .actions-grid .plain-btn,
 .actions-grid .plain-btn--primary {
   width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8125rem;
 }
 
 /* ─── Plain textarea (replaces n-input textarea) ───────────────── */
 .plain-textarea {
   display: block;
   width: 100%;
-  padding: 0.75rem;
+  box-sizing: border-box;
+  padding: 0.625rem 0.75rem;
+  padding-bottom: 1.5rem;
   background: var(--bg-secondary);
-  border: none;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
   color: var(--text-primary);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.8125rem;
-  line-height: 1.6;
+  line-height: 1.5;
   resize: vertical;
   outline: none;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  overflow: auto;
+  min-height: 100px;
+  max-height: 300px;
 }
 
 .plain-textarea::placeholder {
   color: var(--text-muted);
 }
 
+.plain-textarea:hover {
+  border-color: var(--accent-cyan);
+}
+
 .plain-textarea:focus {
-  background: var(--bg-tertiary);
+  border-color: var(--accent-cyan);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.1);
+}
+
+.plain-textarea::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.plain-textarea::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.plain-textarea::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 3px;
+}
+
+.plain-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+.plain-textarea::-webkit-resizer {
+  position: absolute;
+  width: 100%;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
+  border: none;
+  cursor: ns-resize;
+  bottom: 0;
+  left: 0;
+}
+
+.plain-textarea::-webkit-resizer::before {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.plain-textarea::-webkit-resizer::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.plain-textarea:hover::-webkit-resizer::before {
+  background: var(--accent-cyan);
+  height: 5px;
+}
+
+.plain-textarea:hover::-webkit-resizer::after {
+  background: var(--accent-cyan);
+  opacity: 0.7;
 }
 </style>
