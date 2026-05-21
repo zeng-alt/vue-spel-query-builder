@@ -5,14 +5,17 @@ import ExpressionEditor from './ExpressionEditor.vue'
 import { formatExpression } from '../../utils'
 import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   node: RuleNode
   authentication?: Record<string, any>
   principal?: Record<string, any>
   locals?: Record<string, any>
   disabled?: boolean
   level?: number
-}>()
+  theme?: 'light' | 'dark'
+}>(), {
+  theme: 'light',
+})
 
 const emit = defineEmits<{
   (e: 'add-condition', id: string): void
@@ -333,18 +336,22 @@ const listFilterLiteralValue = computed(() => {
     v-if="node.type === 'condition'"
     v-click-outside="closeEdit"
     class="rounded-md border overflow-hidden transition-all duration-150"
-    :class="[isEditing ? 'border-blue-400 bg-white shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300', disabled ? 'opacity-60 pointer-events-none' : '']"
+    :class="[
+      `theme--${theme}`,
+      isEditing ? 'is-editing' : 'is-idle',
+      disabled ? 'opacity-60 pointer-events-none' : '',
+    ]"
   >
     <!-- 摘要行 -->
     <div class="group/row flex items-center gap-1.5 px-2.5 min-h-[34px] cursor-pointer select-none overflow-hidden" @click="toggleEdit">
-      <span class="i-carbon:rule text-[11px] text-gray-300 flex-shrink-0" />
+      <span class="i-carbon:rule text-[11px] flex-shrink-0 icon-muted" />
       <template v-if="isConfigured">
         <span class="expr-chip expr-chip--field font-mono text-[11px] flex-1 min-w-0">{{ summaryExpression.left || '?' }}</span>
         <span v-if="summaryExpression.op" class="expr-chip expr-chip--op text-[11px] font-semibold flex-shrink-0">{{ summaryExpression.op }}</span>
         <span v-if="summaryExpression.right" class="expr-chip expr-chip--val font-mono text-[11px] flex-1 min-w-0">{{ summaryExpression.right }}</span>
-        <span v-else-if="hasValueInput" class="text-[11px] text-gray-300 tracking-widest">···</span>
+        <span v-else-if="hasValueInput" class="text-[11px] tracking-widest text-placeholder">···</span>
       </template>
-      <span v-else class="text-xs text-gray-300 italic">点击配置条件…</span>
+      <span v-else class="text-xs italic text-placeholder">点击配置条件…</span>
       <n-button class="!ml-auto opacity-0 group-hover/row:opacity-100 transition-opacity duration-100 flex-shrink-0" text size="tiny" type="error" :disabled="disabled" @click.stop="handleRemove">
         <template #icon><span class="i-carbon:close text-xs" /></template>
       </n-button>
@@ -352,7 +359,7 @@ const listFilterLiteralValue = computed(() => {
 
     <!-- 编辑面板 -->
     <Transition name="slide-down">
-      <div v-if="isEditing" class="border-t border-gray-100 bg-gray-50/80 px-3 py-3 space-y-2" @click.stop>
+      <div v-if="isEditing" class="edit-panel border-t px-3 py-3 space-y-2" @click.stop>
         <div class="flex items-start gap-2 flex-wrap">
           <!-- 左侧表达式 -->
           <div class="expr-block">
@@ -385,7 +392,7 @@ const listFilterLiteralValue = computed(() => {
             <div class="expr-block__body">
               <!-- 基本类型：直接 #this -->
               <template v-if="listElementType !== 'object'">
-                <span class="text-xs text-gray-500 mr-1">#this</span>
+                <span class="text-xs mr-1 text-secondary">#this</span>
                 <n-select
                   :value="node.listFilter?.comparator ?? ''"
                   :options="listFilterComparators"
@@ -417,7 +424,7 @@ const listFilterLiteralValue = computed(() => {
               </template>
               <!-- 对象类型：字段选择 + 操作符 + 值 -->
               <template v-else>
-                <span class="text-xs text-gray-500 mr-1">#this.</span>
+                <span class="text-xs mr-1 text-secondary">#this.</span>
                 <n-cascader
                   :value="node.listFilter?.fieldPath"
                   :options="currentArrayFieldOption?.elementChildren ?? []"
@@ -463,20 +470,20 @@ const listFilterLiteralValue = computed(() => {
         </div>
 
         <!-- 预览 -->
-        <div v-if="isConfigured" class="flex items-center gap-1.5 px-2 py-1.5 rounded bg-white border border-gray-100">
-          <span class="i-carbon:code text-gray-300 text-xs flex-shrink-0" />
-          <code class="text-[11px] text-gray-500 leading-none">
-            <span class="text-blue-600">{{ summaryExpression.left || '…' }}</span>
-            <span v-if="summaryExpression.op" class="text-gray-600 mx-1">{{ summaryExpression.op }}</span>
-            <span v-if="summaryExpression.right" class="text-emerald-700">{{ summaryExpression.right }}</span>
+        <div v-if="isConfigured" class="flex items-center gap-1.5 px-2 py-1.5 rounded preview-block">
+          <span class="i-carbon:code text-xs flex-shrink-0 icon-muted" />
+          <code class="text-[11px] leading-none preview-code">
+            <span class="preview-left">{{ summaryExpression.left || '…' }}</span>
+            <span v-if="summaryExpression.op" class="mx-1 preview-op">{{ summaryExpression.op }}</span>
+            <span v-if="summaryExpression.right" class="preview-right">{{ summaryExpression.right }}</span>
           </code>
         </div>
       </div>
     </Transition>
   </div>
 
-  <!-- 分组节点（保持不变） -->
-  <div v-else class="relative" :class="level > 0 ? 'ml-4' : ''">
+  <!-- 分组节点 -->
+  <div v-else class="relative group-root" :class="[`theme--${theme}`, level > 0 ? 'ml-4' : '']">
     <div v-if="level > 0" class="group-connector" />
     <div class="flex items-center gap-2 mb-2">
       <div class="op-toggle">
@@ -492,7 +499,7 @@ const listFilterLiteralValue = computed(() => {
         <n-button size="small" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-xs" /></template>条件</n-button>
         <n-button size="small" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-xs" /></template>分组</n-button>
         <template v-if="level > 0">
-          <div class="w-px h-4 bg-gray-200 mx-0.5" />
+          <div class="w-px h-4 mx-0.5 divider" />
           <n-button size="small" quaternary circle type="error" :disabled="disabled" @click="handleRemove"><template #icon><span class="i-carbon:trash-can text-sm" /></template></n-button>
         </template>
       </div>
@@ -503,14 +510,14 @@ const listFilterLiteralValue = computed(() => {
         <template v-if="node.children && node.children.length > 0">
           <div v-for="child in node.children" :key="child.id" class="relative">
             <div class="group-hline" />
-            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1"
+            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1" :theme="theme"
               @add-condition="(id) => $emit('add-condition', id)" @add-group="(id) => $emit('add-group', id)"
               @remove-node="(id) => $emit('remove-node', id)" @update-node="(id, updates) => $emit('update-node', id, updates)" />
           </div>
         </template>
-        <div v-else class="flex flex-col items-center justify-center py-6 rounded-md border border-dashed border-gray-200 text-gray-300">
-          <span class="i-carbon:add-alt text-xl mb-1" />
-          <p class="text-[11px]">暂无条件，点击右上方按钮添加</p>
+        <div v-else class="flex flex-col items-center justify-center py-6 rounded-md border border-dashed empty-state">
+          <span class="i-carbon:add-alt text-xl mb-1 icon-muted" />
+          <p class="text-[11px] text-placeholder">暂无条件，点击右上方按钮添加</p>
         </div>
       </div>
     </div>
@@ -518,34 +525,310 @@ const listFilterLiteralValue = computed(() => {
 </template>
 
 <style scoped>
-/* 保留原有的所有样式 */
-.slide-down-enter-active, .slide-down-leave-active {
+/* ===================================================================
+   CSS Custom Properties — Light & Dark themes
+   =================================================================== */
+.theme--light {
+  --card-bg: #ffffff;
+  --card-border-idle: #e5e7eb;
+  --card-border-hover: #d1d5db;
+  --card-border-editing: #60a5fa;
+  --card-shadow-editing: 0 1px 3px rgba(0,0,0,.08);
+
+  --edit-panel-bg: rgba(249, 250, 251, 0.8);
+  --edit-panel-border: #f3f4f6;
+
+  --preview-bg: #ffffff;
+  --preview-border: #f3f4f6;
+  --preview-text: #6b7280;
+  --preview-left: #2563eb;
+  --preview-op: #4b5563;
+  --preview-right: #065f46;
+
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-placeholder: #9ca3af;
+  --text-muted: #d1d5db;
+  --icon-muted: #9ca3af;
+
+  --expr-field-bg: #eff6ff;
+  --expr-field-fg: #1d4ed8;
+  --expr-field-border: #bfdbfe;
+
+  --expr-op-bg: #f3f4f6;
+  --expr-op-fg: #1f2937;
+  --expr-op-border: #d1d5db;
+
+  --expr-val-bg: #ecfdf5;
+  --expr-val-fg: #065f46;
+  --expr-val-border: #a7f3d0;
+
+  --expr-block-body-bg: #ffffff;
+  --expr-block-body-border: #e5e7eb;
+  --expr-block-label: #9ca3af;
+
+  --op-toggle-border: #d1d5db;
+  --op-toggle-shadow: 0 1px 2px rgba(0,0,0,.04);
+  --op-toggle-btn-bg: #ffffff;
+  --op-toggle-btn-fg: #6b7280;
+  --op-toggle-btn-border: #e5e7eb;
+  --op-toggle-btn-hover-bg: #f9fafb;
+  --op-toggle-btn-hover-fg: #374151;
+  --op-toggle-and-bg: #1d4ed8;
+  --op-toggle-or-bg: #d97706;
+  --op-toggle-not-bg: #dc2626;
+  --op-toggle-active-fg: #ffffff;
+
+  --connector-color: #e5e7eb;
+
+  --empty-border: #e5e7eb;
+  --empty-fg: #9ca3af;
+
+  --divider-bg: #e5e7eb;
+}
+
+.theme--dark {
+  --card-bg: #1e1e32;
+  --card-border-idle: #3e3e5c;
+  --card-border-hover: #5c5c7a;
+  --card-border-editing: #60a5fa;
+  --card-shadow-editing: 0 1px 6px rgba(96, 165, 250, 0.15);
+
+  --edit-panel-bg: rgba(30, 30, 50, 0.85);
+  --edit-panel-border: #3e3e5c;
+
+  --preview-bg: #252545;
+  --preview-border: #3e3e5c;
+  --preview-text: #9ca3af;
+  --preview-left: #93c5fd;
+  --preview-op: #d1d5db;
+  --preview-right: #6ee7b7;
+
+  --text-primary: #e5e5e5;
+  --text-secondary: #9ca3af;
+  --text-placeholder: #6b7280;
+  --text-muted: #4b5563;
+  --icon-muted: #6b7280;
+
+  --expr-field-bg: rgba(59, 130, 246, 0.15);
+  --expr-field-fg: #93c5fd;
+  --expr-field-border: rgba(59, 130, 246, 0.3);
+
+  --expr-op-bg: rgba(107, 114, 128, 0.2);
+  --expr-op-fg: #d1d5db;
+  --expr-op-border: rgba(107, 114, 128, 0.3);
+
+  --expr-val-bg: rgba(16, 185, 129, 0.15);
+  --expr-val-fg: #6ee7b7;
+  --expr-val-border: rgba(16, 185, 129, 0.3);
+
+  --expr-block-body-bg: #252545;
+  --expr-block-body-border: #3e3e5c;
+  --expr-block-label: #6b7280;
+
+  --op-toggle-border: #3e3e5c;
+  --op-toggle-shadow: 0 1px 2px rgba(0,0,0,.2);
+  --op-toggle-btn-bg: #252545;
+  --op-toggle-btn-fg: #9ca3af;
+  --op-toggle-btn-border: #3e3e5c;
+  --op-toggle-btn-hover-bg: #2e2e52;
+  --op-toggle-btn-hover-fg: #e5e5e5;
+  --op-toggle-and-bg: #2563eb;
+  --op-toggle-or-bg: #d97706;
+  --op-toggle-not-bg: #dc2626;
+  --op-toggle-active-fg: #ffffff;
+
+  --connector-color: #3e3e5c;
+
+  --empty-border: #3e3e5c;
+  --empty-fg: #6b7280;
+
+  --divider-bg: #3e3e5c;
+}
+
+
+/* ─── Slide transition ─────────────────────────────────────────── */
+.slide-down-enter-active,
+.slide-down-leave-active {
   transition: max-height 0.2s ease, opacity 0.15s ease;
-  max-height: 400px; overflow: hidden;
+  max-height: 400px;
+  overflow: hidden;
 }
-.slide-down-enter-from, .slide-down-leave-to { max-height: 0; opacity: 0; }
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ─── Condition card ───────────────────────────────────────────── */
+.theme--light.is-idle,
+.theme--dark.is-idle {
+  background: var(--card-bg);
+  border-color: var(--card-border-idle);
+}
+.theme--light.is-idle:hover,
+.theme--dark.is-idle:hover {
+  border-color: var(--card-border-hover);
+}
+.theme--light.is-editing,
+.theme--dark.is-editing {
+  background: var(--card-bg);
+  border-color: var(--card-border-editing);
+  box-shadow: var(--card-shadow-editing);
+}
+
+/* ─── Icon & text helpers ──────────────────────────────────────── */
+.icon-muted { color: var(--icon-muted); }
+.text-placeholder { color: var(--text-placeholder); }
+.text-secondary { color: var(--text-secondary); }
+
+/* ─── Expression chips ─────────────────────────────────────────── */
 .expr-chip {
-  display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.expr-chip--field { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.expr-chip--op    { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; }
-.expr-chip--val   { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-.expr-block { display: flex; flex-direction: column; gap: 4px; }
-.expr-block__label { font-size: 10px; color: #9ca3af; padding-left: 2px; letter-spacing: 0.3px; }
+.expr-chip--field {
+  background: var(--expr-field-bg);
+  color: var(--expr-field-fg);
+  border: 1px solid var(--expr-field-border);
+}
+.expr-chip--op {
+  background: var(--expr-op-bg);
+  color: var(--expr-op-fg);
+  border: 1px solid var(--expr-op-border);
+}
+.expr-chip--val {
+  background: var(--expr-val-bg);
+  color: var(--expr-val-fg);
+  border: 1px solid var(--expr-val-border);
+}
+
+/* ─── Expression block ─────────────────────────────────────────── */
+.expr-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.expr-block__label {
+  font-size: 10px;
+  color: var(--expr-block-label);
+  padding-left: 2px;
+  letter-spacing: 0.3px;
+}
 .expr-block__body {
-  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
-  padding: 5px 8px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 5px 8px;
+  background: var(--expr-block-body-bg);
+  border: 1px solid var(--expr-block-body-border);
+  border-radius: 6px;
+  min-height: 36px;
 }
-.op-toggle { display: inline-flex; border: 1px solid #d1d5db; border-radius: 5px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-.op-toggle__btn { padding: 0 12px; height: 26px; font-size: 12px; font-weight: 600; border: none; border-right: 1px solid #e5e7eb; background: #ffffff; color: #6b7280; cursor: pointer; transition: background 0.1s, color 0.1s; }
+
+/* ─── Edit panel ───────────────────────────────────────────────── */
+.edit-panel {
+  background: var(--edit-panel-bg);
+  border-color: var(--edit-panel-border);
+}
+
+/* ─── Preview block ────────────────────────────────────────────── */
+.preview-block {
+  background: var(--preview-bg);
+  border: 1px solid var(--preview-border);
+}
+.preview-code {
+  color: var(--preview-text);
+}
+.preview-left {
+  color: var(--preview-left);
+}
+.preview-op {
+  color: var(--preview-op);
+}
+.preview-right {
+  color: var(--preview-right);
+}
+
+/* ─── Operator toggle ──────────────────────────────────────────── */
+.op-toggle {
+  display: inline-flex;
+  border: 1px solid var(--op-toggle-border);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: var(--op-toggle-shadow);
+}
+.op-toggle__btn {
+  padding: 0 12px;
+  height: 26px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid var(--op-toggle-btn-border);
+  background: var(--op-toggle-btn-bg);
+  color: var(--op-toggle-btn-fg);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
 .op-toggle__btn:last-child { border-right: none; }
 .op-toggle__btn:disabled { cursor: not-allowed; opacity: 0.5; }
-.op-toggle__btn--off:not(:disabled):hover { background: #f9fafb; color: #374151; }
-.op-toggle__btn--and { background: #1d4ed8; color: #ffffff; }
-.op-toggle__btn--or  { background: #d97706; color: #ffffff; }
-.op-toggle__btn--not { background: #dc2626; color: #ffffff; }
-.group-vline { position: absolute; left: 7px; top: 0; bottom: 12px; width: 1px; background: #e5e7eb; }
-.group-hline { position: absolute; left: -13px; top: 17px; width: 13px; height: 1px; background: #e5e7eb; }
-.group-connector { position: absolute; left: -9px; top: 17px; width: 9px; height: 1px; background: #e5e7eb; }
+.op-toggle__btn--off:not(:disabled):hover {
+  background: var(--op-toggle-btn-hover-bg);
+  color: var(--op-toggle-btn-hover-fg);
+}
+.op-toggle__btn--and:not(.op-toggle__btn--off) {
+  background: var(--op-toggle-and-bg);
+  color: var(--op-toggle-active-fg);
+}
+.op-toggle__btn--or:not(.op-toggle__btn--off) {
+  background: var(--op-toggle-or-bg);
+  color: var(--op-toggle-active-fg);
+}
+.op-toggle__btn--not:not(.op-toggle__btn--off) {
+  background: var(--op-toggle-not-bg);
+  color: var(--op-toggle-active-fg);
+}
+
+/* ─── Connectors & lines ───────────────────────────────────────── */
+.group-vline {
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 12px;
+  width: 1px;
+  background: var(--connector-color);
+}
+.group-hline {
+  position: absolute;
+  left: -13px;
+  top: 17px;
+  width: 13px;
+  height: 1px;
+  background: var(--connector-color);
+}
+.group-connector {
+  position: absolute;
+  left: -9px;
+  top: 17px;
+  width: 9px;
+  height: 1px;
+  background: var(--connector-color);
+}
+
+/* ─── Empty state ──────────────────────────────────────────────── */
+.empty-state {
+  border-color: var(--empty-border);
+  color: var(--empty-fg);
+}
+
+/* ─── Divider ──────────────────────────────────────────────────── */
+.divider {
+  background: var(--divider-bg);
+}
 </style>

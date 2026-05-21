@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { NCard, NButton, NSpace, NSwitch, NText } from 'naive-ui'
+import { NCard, NButton, NSpace, NSwitch, NText, NTag } from 'naive-ui'
 import { RuleTree } from '../src'
 import type { RuleTreeInstance, RuleNode } from '../src'
 import { createEmptyGroup } from '../src'
@@ -39,6 +39,7 @@ watch(contextText, (val) => {
 })
 
 const disabled = ref(false)
+const theme = ref<'light' | 'dark'>('light')
 
 
 
@@ -84,6 +85,13 @@ const handleChange = (rule) => {
     <NCard title="规则树组件示例" :bordered="false" class="mb-6">
       <template #header-extra>
         <NSpace>
+          <NTag :bordered="false" :type="theme === 'dark' ? 'info' : 'default'" size="small" class="!mr-1">
+            {{ theme === 'dark' ? 'Dark' : 'Light' }}
+          </NTag>
+          <NSwitch v-model:value="theme" size="small" :checked-value="'dark'" :unchecked-value="'light'">
+            <template #checked><span class="i-carbon-moon text-xs" /></template>
+            <template #unchecked><span class="i-carbon-sun text-xs" /></template>
+          </NSwitch>
           <NSwitch v-model:value="disabled" size="small">
             <template #checked>禁用</template>
             <template #unchecked>启用</template>
@@ -135,6 +143,7 @@ const handleChange = (rule) => {
           <RuleTree
             ref="ruleTreeRef"
             v-model="ruleTreeData"
+            :theme="theme"
             :context="context"
             :authentication="{
               details: {
