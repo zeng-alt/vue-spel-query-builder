@@ -519,6 +519,65 @@ function buildEntries(): SpelEntry[] {
   return list
 }
 
+// ─── 字符串方法补全项 ──────────────────────────────────────────────────
+/**
+ * 字符串方法补全 —— 仅在识别到 'xxx'. 或 "xxx". 上下文时触发。
+ * 每一项的 label 即插入内容；包含 '(' 的方法会在插入后让用户继续输入参数。
+ */
+function buildStringMethodCompletions(): Completion[] {
+  return [
+    { label:'length',       type:'property', detail:'String.length()',                          info:'字符串长度（属性访问）' },
+    { label:'empty',        type:'property', detail:'String.isEmpty()',                          info:'是否为空（属性访问）' },
+    { label:'contains(',    type:'function', detail:'String.contains(CharSequence)',              info:'判断是否包含子串' },
+    { label:'startsWith(',  type:'function', detail:'String.startsWith(String)',                  info:'是否以某前缀开始' },
+    { label:'endsWith(',    type:'function', detail:'String.endsWith(String)',                    info:'是否以某后缀结束' },
+    { label:'substring(',   type:'function', detail:'String.substring(int, int)',                 info:'截取子串' },
+    { label:'toUpperCase()',type:'function', detail:'String.toUpperCase()',                       info:'转大写' },
+    { label:'toLowerCase()',type:'function', detail:'String.toLowerCase()',                       info:'转小写' },
+    { label:'trim()',       type:'function', detail:'String.trim()',                             info:'去掉首尾空格' },
+    { label:'replace(',     type:'function', detail:'String.replace(CharSequence, CharSequence)', info:'替换子串' },
+  ]
+}
+
+// ─── 字符串字面量上下文检测 ────────────────────────────────────────────
+/**
+ * 检测光标前是否在字符串字面量后紧跟 '.' 的上下文中（如 'abc'.| 或 "abc".le|）。
+ * 返回匹配范围与已输入文本，便于后续过滤补全项；非字符串上下文返回 null。
+ */
+function detectStringLiteralContext(ctx: CompletionContext): { from: number; text: string } | null {
+  const pos  = ctx.pos
+  const doc  = ctx.state.doc
+  const before = doc.sliceString(0, pos)
+  if (!before) return null
+
+  // 找到光标前最后一个 '.' 的位置
+  const dotIdx = before.lastIndexOf('.')
+  if (dotIdx === -1) return null
+
+  // '.' 之前的文本去掉尾部空白后必须以引号结尾
+  const beforeDot = before.slice(0, dotIdx).replace(/\s+$/, '')
+  if (beforeDot.length < 2) return null
+
+  const lastCh = beforeDot[beforeDot.length - 1]
+  if (lastCh !== "'" && lastCh !== '"') return null
+
+  const quote = lastCh
+  // 向前查找匹配的开引号（跳过转义引号，如 \' 或 \"）
+  let openIdx = -1
+  for (let i = beforeDot.length - 2; i >= 0; i--) {
+    if (beforeDot[i] === quote && (i === 0 || beforeDot[i - 1] !== '\\')) {
+      openIdx = i
+      break
+    }
+  }
+  if (openIdx === -1) return null
+
+  // '.' 之后已输入的部分（用作前缀过滤）
+  const afterDot = before.slice(dotIdx + 1)
+
+  return { from: dotIdx + 1, text: afterDot }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // hoverTooltip DOM 构建（读取当前主题内联样式）
 // ═══════════════════════════════════════════════════════════════════════════
@@ -628,6 +687,16 @@ const spelHoverTooltip = computed(() =>
 
 // ─── 自动补全源 ───────────────────────────────────────────────────────────
 const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
+  // ── 优先检测字符串字面量上下文：'xxx'. 或 "xxx". ──────────────
+  const strCtx = detectStringLiteralContext(ctx)
+  if (strCtx) {
+    const lower   = strCtx.text.toLowerCase()
+    const options = buildStringMethodCompletions()
+      .filter(e => e.label.toLowerCase().startsWith(lower))
+    return { from: strCtx.from, options }
+  }
+
+  // ── 原有逻辑：变量 / 属性 / 关键字 / 通用函数 ─────────────────
   const word = ctx.matchBefore(/[#a-zA-Z_][\w#.]*/)
   if (!word || (word.from === word.to && !ctx.explicit)) return null
   const lower = word.text.toLowerCase()
