@@ -337,7 +337,7 @@ const listFilterLiteralValue = computed(() => {
     v-click-outside="closeEdit"
     class="rounded-md border overflow-hidden transition-all duration-150"
     :class="[
-      `theme--${theme}`,
+      `theme--${props.theme}`,
       isEditing ? 'is-editing' : 'is-idle',
       disabled ? 'opacity-60 pointer-events-none' : '',
     ]"
@@ -483,7 +483,7 @@ const listFilterLiteralValue = computed(() => {
   </div>
 
   <!-- 分组节点 -->
-  <div v-else class="relative group-root" :class="[`theme--${theme}`, level > 0 ? 'ml-4' : '']">
+  <div v-else class="relative group-root" :class="[`theme--${props.theme}`, level > 0 ? 'ml-4' : '']">
     <div v-if="level > 0" class="group-connector" />
     <div class="flex items-center gap-2 mb-2">
       <div class="op-toggle">
@@ -510,7 +510,7 @@ const listFilterLiteralValue = computed(() => {
         <template v-if="node.children && node.children.length > 0">
           <div v-for="child in node.children" :key="child.id" class="relative">
             <div class="group-hline" />
-            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1" :theme="theme"
+            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1" :theme="props.theme"
               @add-condition="(id) => $emit('add-condition', id)" @add-group="(id) => $emit('add-group', id)"
               @remove-node="(id) => $emit('remove-node', id)" @update-node="(id, updates) => $emit('update-node', id, updates)" />
           </div>

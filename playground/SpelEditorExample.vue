@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { SpelEditor } from '../src'
 import type { SpelEditorInstance } from '../src'
-
-const props = defineProps<{
-  theme: 'light' | 'dark'
-}>()
-
-const isDark = computed(() => props.theme === 'dark')
 
 const spelExpression = ref('authentication.details.name')
 
@@ -27,9 +21,8 @@ const authenticationText = ref(JSON.stringify(authentication, null, 2))
 watch(authenticationText, (val) => {
   try {
     const parsed = JSON.parse(val)
-    Object.assign(locals, parsed)
+    Object.assign(authentication, parsed)
   } catch {
-    // JSON 格式错误时不更新
   }
 })
 
@@ -44,9 +37,8 @@ const principalText = ref(JSON.stringify(principal, null, 2))
 watch(principalText, (val) => {
   try {
     const parsed = JSON.parse(val)
-    Object.assign(locals, parsed)
+    Object.assign(principal, parsed)
   } catch {
-    // JSON 格式错误时不更新
   }
 })
 
@@ -70,7 +62,6 @@ watch(localsText, (val) => {
     const parsed = JSON.parse(val)
     Object.assign(locals, parsed)
   } catch {
-    // JSON 格式错误时不更新
   }
 })
 
@@ -128,204 +119,318 @@ const formatResult = (result: any): string => {
 </script>
 
 <template>
-  <div class="spel-editor-example" :class="isDark ? 'theme--dark' : 'theme--light'">
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <div class="toolbar-group">
-        <n-button size="tiny" @click="handleValidateClick">验证</n-button>
-        <n-button size="tiny" @click="handleRunClick">运行</n-button>
-        <n-button size="tiny" @click="handleGetValueClick">取值</n-button>
+  <div class="spel-editor-example">
+    <div class="editor-section">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="i-carbon-terminal text-2xl text-cyan-400" />
+          <div>
+            <h3 class="text-lg font-semibold text-white">表达式编辑器</h3>
+            <p class="text-sm text-gray-500">输入 SpEL 表达式进行验证和执行</p>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <n-button size="medium" type="primary" @click="handleRunClick">
+            <template #icon>
+              <span class="i-carbon-play" />
+            </template>
+            运行
+          </n-button>
+          <n-button size="medium" @click="handleValidateClick">
+            <template #icon>
+              <span class="i-carbon-checkmark" />
+            </template>
+            验证
+          </n-button>
+          <n-button size="medium" quaternary @click="handleGetValueClick">
+            <template #icon>
+              <span class="i-carbon-code" />
+            </template>
+            取值
+          </n-button>
+        </div>
       </div>
-      <div class="toolbar-spacer" />
-      <span class="expr-label">SPEL</span>
+
+      <div class="editor-wrapper">
+        <SpelEditor
+          ref="editorRef"
+          v-model="spelExpression"
+          :authentication="authentication"
+          :principal="principal"
+          :locals="locals"
+          :height="280"
+          theme="dark"
+          @validate="handleValidate"
+          @change="handleChange"
+          @run="handleRun"
+        />
+      </div>
     </div>
 
-    <!-- Editor -->
-    <div class="editor-border">
-      <SpelEditor
-        ref="editorRef"
-        v-model="spelExpression"
-        :authentication="authentication"
-        :principal="principal"
-        :locals="locals"
-        :height="260"
-        @validate="handleValidate"
-        @change="handleChange"
-        @run="handleRun"
-        :theme="props.theme"
-      />
-    </div>
-
-    <!-- Result -->
-    <div v-if="runResult" class="result-panel" :class="runResult.error ? 'is-error' : 'is-ok'">
+    <div v-if="runResult" class="result-section" :class="runResult.error ? 'result-error' : 'result-success'">
       <div class="result-header">
-        <span :class="runResult.error ? 'result-icon-error' : 'result-icon-ok'" class="result-icon" />
-        <span class="result-title">{{ runResult.error ? 'Error' : 'Result' }}</span>
-        <span class="result-type">{{ runResult.error ? '' : getResultType(runResult.result) }}</span>
+        <span class="result-icon">
+          <span v-if="runResult.error" class="i-carbon-close-outline text-red-400" />
+          <span v-else class="i-carbon-checkmark-outline text-emerald-400" />
+        </span>
+        <div class="result-info">
+          <span class="result-title">{{ runResult.error ? '执行错误' : '执行结果' }}</span>
+          <span v-if="!runResult.error" class="result-type">{{ getResultType(runResult.result) }}</span>
+        </div>
       </div>
-      <pre v-if="runResult.error" class="result-body">{{ runResult.error }}</pre>
-      <pre v-else class="result-body">{{ formatResult(runResult.result) }}</pre>
+      <pre class="result-body">{{ runResult.error || formatResult(runResult.result) }}</pre>
     </div>
 
-    <!-- Context panels -->
-    <div class="context-grid">
-      <div class="ctx-panel">
-        <div class="ctx-head">authentication</div>
-        <n-input type="textarea" size="tiny" :rows="4" v-model:value="authenticationText" />
+    <div class="context-section">
+      <div class="context-header">
+        <span class="i-carbon-data-structured text-xl text-purple-400" />
+        <h3 class="text-base font-semibold text-white">上下文变量</h3>
       </div>
-      <div class="ctx-panel">
-        <div class="ctx-head">principal</div>
-        <n-input type="textarea" size="tiny" :rows="4" v-model:value="principalText" />
-      </div>
-      <div class="ctx-panel">
-        <div class="ctx-head">locals (#)</div>
-        <n-input type="textarea" size="tiny" :rows="4" v-model:value="localsText" />
+      <div class="context-grid">
+        <div class="context-panel">
+          <div class="context-label">
+            <span class="i-carbon-id-management text-cyan-400" />
+            <span>authentication</span>
+          </div>
+          <n-input
+            v-model:value="authenticationText"
+            type="textarea"
+            size="small"
+            :rows="5"
+            placeholder="认证信息..."
+            class="context-input"
+          />
+        </div>
+        <div class="context-panel">
+          <div class="context-label">
+            <span class="i-carbon-user text-emerald-400" />
+            <span>principal</span>
+          </div>
+          <n-input
+            v-model:value="principalText"
+            type="textarea"
+            size="small"
+            :rows="5"
+            placeholder="主体信息..."
+            class="context-input"
+          />
+        </div>
+        <div class="context-panel">
+          <div class="context-label">
+            <span class="i-carbon-data-blob text-amber-400" />
+            <span>locals (#)</span>
+          </div>
+          <n-input
+            v-model:value="localsText"
+            type="textarea"
+            size="small"
+            :rows="5"
+            placeholder="本地变量..."
+            class="context-input"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-
 <style scoped>
 .spel-editor-example {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #111111;
+  --bg-card: #0d0d0d;
+  --border-primary: #1a1a1a;
+  --border-secondary: #252525;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1a1;
+  --text-muted: #525252;
+  --accent-cyan: #22d3ee;
+  --accent-purple: #a855f7;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1.5rem;
+  padding: 0.5rem;
 }
 
-/* ─── Light ───────────────────────────────────────── */
-.spel-editor-example.theme--light {
-  --toolbar-bg: #f5f5f5;
-  --toolbar-border: #e0e0e0;
-  --editor-border: #e0e0e0;
-  --result-ok-bg: #f6f6f6;
-  --result-ok-border: #e0e0e0;
-  --result-ok-fg: #1f1f1f;
-  --result-ok-type: #888888;
-  --result-error-bg: #fdf2f2;
-  --result-error-border: #fecaca;
-  --result-error-fg: #b91c1c;
-  --ctx-bg: #fafafa;
-  --ctx-border: #e0e0e0;
-  --ctx-head-fg: #555555;
-  --expr-label-fg: #aaaaaa;
+.editor-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 1.25rem;
 }
 
-/* ─── AMOLED Dark ─────────────────────────────────── */
-.spel-editor-example.theme--dark {
-  --toolbar-bg: #0a0a0a;
-  --toolbar-border: #1a1a1a;
-  --editor-border: #1a1a1a;
-  --result-ok-bg: #0a0a0a;
-  --result-ok-border: #1a1a1a;
-  --result-ok-fg: #cccccc;
-  --result-ok-type: #666666;
-  --result-error-bg: #1a0a0a;
-  --result-error-border: #3a1515;
-  --result-error-fg: #f87171;
-  --ctx-bg: #0a0a0a;
-  --ctx-border: #1a1a1a;
-  --ctx-head-fg: #777777;
-  --expr-label-fg: #444444;
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
-/* ─── Toolbar ─────────────────────────────────────── */
-.toolbar {
+.section-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--toolbar-bg);
-  border: 1px solid var(--toolbar-border);
-  border-radius: 4px;
-}
-.toolbar-group { display: flex; gap: 4px; }
-.toolbar-spacer { flex: 1; }
-.expr-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--expr-label-fg);
+  gap: 0.75rem;
 }
 
-/* ─── Editor ──────────────────────────────────────── */
-.editor-border {
-  border: 1px solid var(--editor-border);
-  border-radius: 4px;
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.editor-wrapper {
+  border-radius: 12px;
   overflow: hidden;
+  border: 1px solid var(--border-secondary);
 }
 
-/* ─── Result ──────────────────────────────────────── */
-.result-panel {
-  border-radius: 4px;
+.result-section {
+  border-radius: 16px;
+  overflow: hidden;
   border: 1px solid;
-  overflow: hidden;
 }
-.result-panel.is-ok {
-  background: var(--result-ok-bg);
-  border-color: var(--result-ok-border);
+
+.result-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+  border-color: rgba(16, 185, 129, 0.2);
 }
-.result-panel.is-error {
-  background: var(--result-error-bg);
-  border-color: var(--result-error-border);
+
+.result-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+  border-color: rgba(239, 68, 68, 0.2);
 }
+
 .result-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.result-panel.is-ok .result-header {
-  color: var(--result-ok-fg);
-  border-bottom: 1px solid var(--result-ok-border);
-}
-.result-panel.is-error .result-header {
-  color: var(--result-error-fg);
-  border-bottom: 1px solid var(--result-error-border);
-}
-.result-icon { font-size: 13px; }
-.result-icon-ok::before { content: '✓'; color: #22c55e; }
-.result-icon-error::before { content: '✗'; color: var(--result-error-fg); }
-.result-title { flex: 1; }
-.result-type {
-  font-weight: 400;
-  color: var(--result-ok-type);
-  font-size: 10px;
-}
-.result-body {
-  margin: 0;
-  padding: 10px;
-  font-size: 12px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-x: auto;
-  color: var(--result-ok-fg);
-}
-.result-panel.is-error .result-body {
-  color: var(--result-error-fg);
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid;
 }
 
-/* ─── Context panels ──────────────────────────────── */
+.result-success .result-header {
+  border-bottom-color: rgba(16, 185, 129, 0.1);
+}
+
+.result-error .result-header {
+  border-bottom-color: rgba(239, 68, 68, 0.1);
+}
+
+.result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.result-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.result-success .result-title {
+  color: var(--accent-emerald);
+}
+
+.result-error .result-title {
+  color: var(--accent-red);
+}
+
+.result-type {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.result-body {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+.result-success .result-body {
+  color: var(--text-secondary);
+}
+
+.result-error .result-body {
+  color: var(--accent-red);
+}
+
+.context-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.context-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 .context-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
 }
-.ctx-panel {
-  background: var(--ctx-bg);
-  border: 1px solid var(--ctx-border);
-  border-radius: 4px;
-  padding: 8px;
+
+.context-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1rem;
 }
-.ctx-head {
-  font-size: 10px;
+
+.context-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--ctx-head-fg);
-  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+
+.context-input {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    justify-content: flex-start;
+  }
+
+  .context-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

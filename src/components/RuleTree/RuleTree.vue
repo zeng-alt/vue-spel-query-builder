@@ -18,7 +18,7 @@ defineExpose<RuleTreeInstance>({
 </script>
 
 <template>
-  <div class="rule-tree-container" :class="`theme--${theme}`">
+  <div class="rule-tree-container" :class="`theme--${props.theme}`">
     <RuleTreeNode
       :node="modelValue"
       :authentication="authentication"
@@ -26,7 +26,7 @@ defineExpose<RuleTreeInstance>({
       :locals="locals"
       :disabled="disabled"
       :level="0"
-      :theme="theme"
+      :theme="props.theme"
       @add-condition="addCondition"
       @add-group="addGroup"
       @remove-node="removeNode"

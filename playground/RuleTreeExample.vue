@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { NButton, NSwitch } from 'naive-ui'
+import { NButton, NSwitch, NSpace } from 'naive-ui'
 import { RuleTree } from '../src'
 import type { RuleTreeInstance, RuleNode } from '../src'
 import { createEmptyGroup } from '../src'
-
-const props = defineProps<{
-  theme: 'light' | 'dark'
-}>()
 
 const ruleTreeRef = ref<RuleTreeInstance>()
 
@@ -38,7 +34,6 @@ watch(contextText, (val) => {
     const parsed = JSON.parse(val)
     Object.assign(context, parsed)
   } catch {
-    // JSON 格式错误时不更新
   }
 })
 
@@ -80,280 +75,409 @@ const handleChange = (rule) => {
 </script>
 
 <template>
-  <div class="p-8">
-    <div class="mb-8">
-      <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center gap-3">
-          <span class="i-carbon-flow text-3xl text-purple-400" />
-          <div>
-            <h2 class="text-2xl font-bold text-white">规则树</h2>
-            <p class="text-gray-500 text-sm">可视化规则构建器</p>
+  <div class="rule-tree-example">
+    <div class="info-banner">
+      <div class="banner-content">
+        <span class="i-carbon-information text-cyan-400 text-xl" />
+        <p class="text-sm text-gray-300">
+          通过可视化界面构建 SpEL 查询规则树，生成布尔表达式的规则树。使用分组可以创建复杂的嵌套条件。
+        </p>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="left-column">
+        <div class="config-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-settings text-xl text-amber-400" />
+              <div>
+                <h3 class="text-base font-semibold text-white">上下文配置</h3>
+                <p class="text-xs text-gray-500">提供字段供选择</p>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">状态</span>
+              <NSwitch v-model:value="disabled" size="small">
+                <template #checked>
+                  <span class="text-xs px-1">禁用</span>
+                </template>
+                <template #unchecked>
+                  <span class="text-xs px-1">启用</span>
+                </template>
+              </NSwitch>
+            </div>
+          </div>
+          <div class="config-editor">
+            <n-input
+              v-model:value="contextText"
+              type="textarea"
+              :rows="6"
+              placeholder="配置上下文变量..."
+              class="config-input"
+            />
           </div>
         </div>
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <span class="text-gray-400 text-sm">状态：</span>
-            <NSwitch v-model:value="disabled">
-              <template #checked>
-                <span class="text-xs">禁用</span>
+
+        <div class="tree-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-tree-view-alt text-xl text-emerald-400" />
+              <div>
+                <h3 class="text-base font-semibold text-white">规则树</h3>
+                <p class="text-xs text-gray-500">构建查询条件</p>
+              </div>
+            </div>
+          </div>
+          <div class="tree-container">
+            <RuleTree
+              ref="ruleTreeRef"
+              v-model="ruleTreeData"
+              :context="context"
+              :authentication="{
+                details: {
+                  name: 'John',
+                  permissions: ['read', 'write', 'delete'],
+                }
+              }"
+              :principal="{
+                date: '1111',
+              }"
+              :locals="context"
+              :disabled="disabled"
+              theme="light"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="right-column">
+        <div class="output-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-code text-xl text-pink-400" />
+              <div>
+                <h3 class="text-base font-semibold text-white">生成的表达式</h3>
+                <p class="text-xs text-gray-500">SpEL 格式</p>
+              </div>
+            </div>
+            <NButton size="small" @click="handleCopyExpression">
+              <template #icon>
+                <span class="i-carbon-copy" />
               </template>
-              <template #unchecked>
-                <span class="text-xs">启用</span>
-              </template>
-            </NSwitch>
+              复制
+            </NButton>
+          </div>
+          <div class="output-display">
+            <code class="expression-code">{{ spelExpression || '(空)' }}</code>
           </div>
         </div>
-      </div>
 
-      <div class="mb-6 p-4 bg-gradient-to-r from-cyan-950/30 to-purple-950/30 rounded-xl border border-cyan-900/30">
-        <div class="flex items-start gap-3">
-          <span class="i-carbon-information text-cyan-400 text-xl shrink-0 mt-0.5" />
-          <p class="text-gray-300 text-sm">
-            通过可视化界面构建 SpEL 查询规则树，生成布尔表达式的规则树。使用分组可以创建复杂的嵌套条件。
-          </p>
-        </div>
-      </div>
-
-      <div class="mb-6">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="i-carbon-settings text-yellow-400" />
-          <h3 class="text-lg font-semibold text-white">上下文配置</h3>
-          <span class="text-xs text-gray-500">(提供字段供选择)</span>
-        </div>
-        <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-          <n-input
-            v-model:value="contextText"
-            type="textarea"
-            :rows="6"
-            placeholder="配置上下文变量..."
-            class="font-mono text-sm"
-          />
-        </div>
-      </div>
-
-      <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <span class="i-carbon-tree-view text-green-400" />
-            <h3 class="text-lg font-semibold text-white">规则树</h3>
+        <div class="actions-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-tool-kit text-xl text-cyan-400" />
+              <h3 class="text-base font-semibold text-white">操作</h3>
+            </div>
           </div>
-          <NSpace>
-            <NButton size="large" @click="handleValidate">
+          <div class="actions-grid">
+            <NButton size="large" block type="primary" @click="handleValidate">
               <template #icon>
                 <span class="i-carbon-checkmark-outline" />
               </template>
-              验证
+              验证规则
             </NButton>
-            <NButton size="large" @click="handleReset" quaternary>
+            <NButton size="large" block @click="handleReset">
               <template #icon>
                 <span class="i-carbon-renew" />
               </template>
               重置
             </NButton>
-          </NSpace>
-        </div>
-
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
-          <RuleTree
-            ref="ruleTreeRef"
-            v-model="ruleTreeData"
-            :context="context"
-            :authentication="{
-              details: {
-                name: 'John',
-                permissions: ['read', 'write', 'delete'],
-              }
-            }"
-            :principal="{
-              date: '1111',
-            }"
-            :locals="context"
-            :disabled="disabled"
-          />
-        </div>
-      </div>
-
-      <div class="mt-8">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <span class="i-carbon-code-block text-pink-400" />
-            <h3 class="text-lg font-semibold text-white">生成的 SpEL 表达式</h3>
           </div>
-          <NButton size="large" @click="handleCopyExpression">
-            <template #icon>
-              <span class="i-carbon-copy" />
-            </template>
-            复制
-          </NButton>
         </div>
 
-        <div class="bg-gray-950 rounded-xl border border-gray-800 p-6 overflow-x-auto shadow-inner">
-          <code class="text-green-400 font-mono text-sm whitespace-pre leading-relaxed">{{ spelExpression || '(空)' }}</code>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div class="p-6 bg-gray-900 rounded-xl border border-gray-800">
-        <div class="flex items-center gap-3 mb-6">
-          <span class="i-carbon-book-open text-cyan-400 text-2xl" />
-          <h3 class="text-lg font-semibold text-white">使用说明</h3>
-        </div>
-        <div class="space-y-4">
-          <div class="flex items-start gap-4 p-4 bg-gray-950 rounded-lg">
-            <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
-              <span class="text-blue-400 font-bold">1</span>
-            </div>
-            <div>
-              <p class="font-medium text-gray-200">选择字段</p>
-              <p class="text-sm text-gray-500 mt-1">从下拉列表中选择一个上下文字段</p>
+        <div class="guide-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-book text-xl text-purple-400" />
+              <h3 class="text-base font-semibold text-white">使用指南</h3>
             </div>
           </div>
-
-          <div class="flex items-start gap-4 p-4 bg-gray-950 rounded-lg">
-            <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-              <span class="text-green-400 font-bold">2</span>
+          <div class="guide-steps">
+            <div class="guide-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <p class="step-title">选择字段</p>
+                <p class="step-desc">从下拉列表中选择一个上下文字段</p>
+              </div>
             </div>
-            <div>
-              <p class="font-medium text-gray-200">选择操作</p>
-              <p class="text-sm text-gray-500 mt-1">选择比较操作符（等于、不等于、包含等）</p>
+            <div class="guide-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <p class="step-title">选择操作</p>
+                <p class="step-desc">选择比较操作符（等于、不等于、包含等）</p>
+              </div>
             </div>
-          </div>
-
-          <div class="flex items-start gap-4 p-4 bg-gray-950 rounded-lg">
-            <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
-              <span class="text-purple-400 font-bold">3</span>
+            <div class="guide-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <p class="step-title">输入值</p>
+                <p class="step-desc">输入要比较的值</p>
+              </div>
             </div>
-            <div>
-              <p class="font-medium text-gray-200">输入值</p>
-              <p class="text-sm text-gray-500 mt-1">输入要比较的值</p>
-            </div>
-          </div>
-
-          <div class="flex items-start gap-4 p-4 bg-gray-950 rounded-lg">
-            <div class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
-              <span class="text-orange-400 font-bold">4</span>
-            </div>
-            <div>
-              <p class="font-medium text-gray-200">组合条件</p>
-              <p class="text-sm text-gray-500 mt-1">使用"且/或"操作符组合多个条件</p>
+            <div class="guide-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <p class="step-title">组合条件</p>
+                <p class="step-desc">使用"且/或"操作符组合多个条件</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="p-6 bg-gray-900 rounded-xl border border-gray-800">
-        <div class="flex items-center gap-3 mb-6">
-          <span class="i-carbon-code text-yellow-400 text-2xl" />
-          <h3 class="text-lg font-semibold text-white">代码示例</h3>
-        </div>
-        <div class="bg-gray-950 rounded-lg p-4 overflow-x-auto">
-          <pre class="text-sm text-gray-300 font-mono leading-relaxed"><code>{{ codeExample }}</code></pre>
+        <div class="code-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-application text-xl text-yellow-400" />
+              <h3 class="text-base font-semibold text-white">代码示例</h3>
+            </div>
+          </div>
+          <div class="code-display">
+            <pre class="code-block"><code>{{ codeExample }}</code></pre>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-
 <style scoped>
 .rule-tree-example {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #111111;
+  --bg-card: #0d0d0d;
+  --border-primary: #1a1a1a;
+  --border-secondary: #252525;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1a1;
+  --text-muted: #525252;
+  --accent-cyan: #22d3ee;
+  --accent-purple: #a855f7;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-pink: #ec4899;
+  --accent-yellow: #eab308;
+
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1.25rem;
+  padding: 0.5rem;
 }
 
-/* ─── Light ────────────────────────────────────────── */
-.rule-tree-example.theme--light {
-  --toolbar-bg: #f5f5f5;
-  --toolbar-border: #e0e0e0;
-  --tree-border: #e0e0e0;
-  --section-head-fg: #555555;
-  --expr-bg: #f6f6f6;
-  --expr-border: #e0e0e0;
-  --expr-fg: #1f1f1f;
-  --disabled-label: #888888;
-  --ctx-input-bg: #fafafa;
+.info-banner {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
 }
 
-/* ─── AMOLED Pure Black dark ───────────────────────── */
-.rule-tree-example.theme--dark {
-  --toolbar-bg: #0a0a0a;
-  --toolbar-border: #1a1a1a;
-  --tree-border: #1a1a1a;
-  --section-head-fg: #777777;
-  --expr-bg: #0a0a0a;
-  --expr-border: #1a1a1a;
-  --expr-fg: #cccccc;
-  --disabled-label: #555555;
-  --ctx-input-bg: #0a0a0a;
-}
-
-/* ─── Toolbar ──────────────────────────────────────── */
-.toolbar {
+.banner-content {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--toolbar-bg);
-  border: 1px solid var(--toolbar-border);
-  border-radius: 4px;
-}
-.toolbar-group { display: flex; gap: 4px; }
-.toolbar-spacer { flex: 1; }
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.disabled-label {
-  font-size: 11px;
-  color: var(--disabled-label);
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
-/* ─── Tree border ──────────────────────────────────── */
-.tree-border {
-  border: 1px solid var(--tree-border);
-  border-radius: 4px;
-  overflow: hidden;
+.banner-content p {
+  margin: 0;
+  line-height: 1.5;
 }
 
-/* ─── Bottom grid ──────────────────────────────────── */
-.bottom-grid {
+.main-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.section-head {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--section-head-fg);
-  margin-bottom: 6px;
+  grid-template-columns: 1fr 400px;
+  gap: 1.25rem;
 }
 
-/* ─── Context ──────────────────────────────────────── */
-.ctx-input {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 12px;
+.left-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-/* ─── Expression ───────────────────────────────────── */
-.expr-block {
-  background: var(--expr-bg);
-  border: 1px solid var(--expr-border);
-  border-radius: 4px;
-  padding: 10px;
-  min-height: 105px;
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-header h3 {
+  margin: 0;
+}
+
+.section-header p {
+  margin: 0;
+}
+
+.config-section,
+.tree-section,
+.output-section,
+.actions-section,
+.guide-section,
+.code-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.config-editor {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-secondary);
+}
+
+.config-input {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+}
+
+.tree-container {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1rem;
+  min-height: 300px;
+}
+
+.output-display {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1rem;
+  min-height: 80px;
   overflow-x: auto;
 }
-.expr-code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 12px;
-  color: var(--expr-fg);
+
+.expression-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.875rem;
+  color: var(--accent-emerald);
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-all;
-  line-height: 1.5;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+}
+
+.step-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.code-display {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.code-block {
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre;
+}
+
+@media (max-width: 1200px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .right-column {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
