@@ -5,6 +5,13 @@ import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
 
 const activeTab = ref('spel-editor')
+const theme = ref<'light' | 'dark'>('light')
+
+const isDark = computed(() => theme.value === 'dark')
+
+function toggleTheme() {
+  theme.value = theme.value === 'light' ? 'dark' : 'light'
+}
 </script>
 
 <template>
@@ -73,6 +80,10 @@ const activeTab = ref('spel-editor')
 </template>
 
 <style>
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
 body {
   font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #000;

@@ -102,6 +102,7 @@ export interface RuleTreeProps {
   principal?: Record<string, any>
   locals?: Record<string, any>
   disabled?: boolean
+  theme?: 'light' | 'dark'
 }
 
 export interface RuleTreeEmits {
