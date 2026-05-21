@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, provide, type Ref } from 'vue'
 import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
 
 const activeTab = ref('spel-editor')
+
+const playgroundTheme = ref<'light' | 'dark'>('dark')
+provide<Ref<'light' | 'dark'>>('playgroundTheme', playgroundTheme)
+
+function toggleTheme() {
+  playgroundTheme.value = playgroundTheme.value === 'dark' ? 'light' : 'dark'
+}
 </script>
 
 <template>
-  <div class="app-container">
+  <div class="app-container" :data-theme="playgroundTheme">
     <div class="ambient-glow ambient-glow-1" />
     <div class="ambient-glow ambient-glow-2" />
     
@@ -25,15 +32,12 @@ const activeTab = ref('spel-editor')
           </div>
         </div>
         
-        <div class="header-badges">
-          <div class="badge badge-theme">
-            <span class="i-carbon-lightning text-amber-400" />
-            <span class="badge-text">AMOLED Pure Black</span>
-          </div>
-          <div class="badge badge-version">
-            <span class="i-carbon-tag text-emerald-400" />
-            <span class="badge-text">v1.0.0</span>
-          </div>
+        <div class="header-controls">
+          <button class="theme-toggle" :title="playgroundTheme === 'dark' ? '切换到亮色' : '切换到暗色'" @click="toggleTheme">
+            <span v-if="playgroundTheme === 'dark'" class="i-carbon-sun" />
+            <span v-else class="i-carbon-moon" />
+            <span class="theme-text">{{ playgroundTheme === 'dark' ? '暗色' : '亮色' }}</span>
+          </button>
         </div>
       </div>
     </header>
@@ -41,14 +45,22 @@ const activeTab = ref('spel-editor')
     <main class="main-content">
       <div class="card-container">
         <div class="tabs-wrapper">
-          <NTabs v-model:value="activeTab" type="segment" animated>
-            <NTabPane name="spel-editor" tab="SpEL 编辑器">
-              <SpelEditorExample />
-            </NTabPane>
-            <NTabPane name="rule-tree" tab="规则树">
-              <RuleTreeExample />
-            </NTabPane>
-          </NTabs>
+          <div class="tabs-bar">
+            <button
+              class="tab-btn"
+              :class="{ 'tab-btn--active': activeTab === 'spel-editor' }"
+              @click="activeTab = 'spel-editor'"
+            >SpEL 编辑器</button>
+            <button
+              class="tab-btn"
+              :class="{ 'tab-btn--active': activeTab === 'rule-tree' }"
+              @click="activeTab = 'rule-tree'"
+            >规则树</button>
+          </div>
+          <div class="tab-content">
+            <SpelEditorExample v-if="activeTab === 'spel-editor'" />
+            <RuleTreeExample v-else-if="activeTab === 'rule-tree'" />
+          </div>
         </div>
       </div>
     </main>
@@ -80,7 +92,8 @@ const activeTab = ref('spel-editor')
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
 
-.app-container {
+/* ─── Theme variables: dark (default) ─────────────────────────────── */
+.app-container[data-theme="dark"] {
   --bg-primary: #000000;
   --bg-secondary: #0a0a0a;
   --bg-tertiary: #111111;
@@ -95,13 +108,34 @@ const activeTab = ref('spel-editor')
   --accent-amber: #f59e0b;
   --accent-emerald: #10b981;
   --accent-gradient: linear-gradient(135deg, #22d3ee 0%, #a855f7 50%, #ec4899 100%);
-  
+}
+
+/* ─── Theme variables: light ──────────────────────────────────────── */
+.app-container[data-theme="light"] {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafafa;
+  --border-primary: #e0e0e0;
+  --border-secondary: #d0d0d0;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --accent-cyan: #06b6d4;
+  --accent-purple: #8b5cf6;
+  --accent-pink: #ec4899;
+  --accent-amber: #d97706;
+  --accent-emerald: #059669;
+  --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%);
+}
+
+.app-container {
   position: relative;
   min-height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 .ambient-glow {
@@ -109,8 +143,13 @@ const activeTab = ref('spel-editor')
   pointer-events: none;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.15;
+  opacity: 0.12;
   z-index: 0;
+  transition: opacity 0.3s;
+}
+
+.app-container[data-theme="light"] .ambient-glow {
+  opacity: 0.06;
 }
 
 .ambient-glow-1 {
@@ -135,6 +174,7 @@ const activeTab = ref('spel-editor')
   background: linear-gradient(180deg, var(--bg-secondary) 0%, transparent 100%);
   border-bottom: 1px solid var(--border-primary);
   padding: 2.5rem 2rem;
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .header-content {
@@ -192,14 +232,15 @@ const activeTab = ref('spel-editor')
   margin: 0;
 }
 
-.header-badges {
+/* ─── Header controls ──────────────────────────────────────────── */
+.header-controls {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.badge {
-  display: flex;
+.theme-toggle {
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
@@ -210,12 +251,21 @@ const activeTab = ref('spel-editor')
   font-weight: 500;
   color: var(--text-secondary);
   backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  font-family: inherit;
 }
 
-.badge-text {
+.theme-toggle:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.theme-text {
   letter-spacing: 0.025em;
 }
 
+/* ─── Main content ──────────────────────────────────────────────── */
 .main-content {
   position: relative;
   z-index: 5;
@@ -235,16 +285,61 @@ const activeTab = ref('spel-editor')
   padding: 1.5rem;
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 20px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 20px 50px -12px rgba(0, 0, 0, 0.5);
+  transition: background 0.3s, border-color 0.3s;
 }
 
+.app-container[data-theme="light"] .tabs-wrapper {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Tabs bar ──────────────────────────────────────────────────── */
+.tabs-bar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 0.25rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+
+.tab-btn--active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.tab-content {
+  min-height: 200px;
+}
+
+/* ─── Footer ────────────────────────────────────────────────────── */
 .footer {
   position: relative;
   z-index: 10;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-primary);
   padding: 1.5rem 2rem;
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .footer-content {
@@ -287,6 +382,7 @@ const activeTab = ref('spel-editor')
   color: var(--accent-cyan);
 }
 
+/* ─── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .header {
     padding: 1.5rem 1rem;

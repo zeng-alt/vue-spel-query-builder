@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, inject } from 'vue'
 import { SpelEditor } from '../src'
 import type { SpelEditorInstance } from '../src'
+
+const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
 
 const spelExpression = ref('authentication.details.name')
 
@@ -130,24 +132,18 @@ const formatResult = (result: any): string => {
           </div>
         </div>
         <div class="action-buttons">
-          <n-button size="medium" type="primary" @click="handleRunClick">
-            <template #icon>
-              <span class="i-carbon-play" />
-            </template>
+          <button class="editor-btn editor-btn--primary" @click="handleRunClick">
+            <span class="i-carbon-play" />
             运行
-          </n-button>
-          <n-button size="medium" @click="handleValidateClick">
-            <template #icon>
-              <span class="i-carbon-checkmark" />
-            </template>
+          </button>
+          <button class="editor-btn" @click="handleValidateClick">
+            <span class="i-carbon-checkmark" />
             验证
-          </n-button>
-          <n-button size="medium" quaternary @click="handleGetValueClick">
-            <template #icon>
-              <span class="i-carbon-code" />
-            </template>
+          </button>
+          <button class="editor-btn" @click="handleGetValueClick">
+            <span class="i-carbon-code" />
             取值
-          </n-button>
+          </button>
         </div>
       </div>
 
@@ -159,7 +155,7 @@ const formatResult = (result: any): string => {
           :principal="principal"
           :locals="locals"
           :height="280"
-          theme="dark"
+          :theme="playgroundTheme"
           @validate="handleValidate"
           @change="handleChange"
           @run="handleRun"
@@ -192,42 +188,36 @@ const formatResult = (result: any): string => {
             <span class="i-carbon-id-management text-cyan-400" />
             <span>authentication</span>
           </div>
-          <n-input
-            v-model:value="authenticationText"
-            type="textarea"
-            size="small"
-            :rows="5"
+          <textarea
+            v-model="authenticationText"
+            class="plain-textarea"
+            rows="5"
             placeholder="认证信息..."
-            class="context-input"
-          />
+          ></textarea>
         </div>
         <div class="context-panel">
           <div class="context-label">
             <span class="i-carbon-user text-emerald-400" />
             <span>principal</span>
           </div>
-          <n-input
-            v-model:value="principalText"
-            type="textarea"
-            size="small"
-            :rows="5"
+          <textarea
+            v-model="principalText"
+            class="plain-textarea"
+            rows="5"
             placeholder="主体信息..."
-            class="context-input"
-          />
+          ></textarea>
         </div>
         <div class="context-panel">
           <div class="context-label">
             <span class="i-carbon-data-blob text-amber-400" />
             <span>locals (#)</span>
           </div>
-          <n-input
-            v-model:value="localsText"
-            type="textarea"
-            size="small"
-            :rows="5"
+          <textarea
+            v-model="localsText"
+            class="plain-textarea"
+            rows="5"
             placeholder="本地变量..."
-            class="context-input"
-          />
+          ></textarea>
         </div>
       </div>
     </div>
@@ -236,21 +226,6 @@ const formatResult = (result: any): string => {
 
 <style scoped>
 .spel-editor-example {
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #111111;
-  --bg-card: #0d0d0d;
-  --border-primary: #1a1a1a;
-  --border-secondary: #252525;
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1a1;
-  --text-muted: #525252;
-  --accent-cyan: #22d3ee;
-  --accent-purple: #a855f7;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -414,9 +389,65 @@ const formatResult = (result: any): string => {
   letter-spacing: 0.05em;
 }
 
-.context-input {
+/* ─── Editor buttons (replaces n-button) ───────────────────────── */
+.editor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.editor-btn:hover {
+  border-color: var(--border-secondary);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.editor-btn--primary {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
+  border-color: rgba(34, 211, 238, 0.2);
+  color: var(--accent-cyan);
+}
+
+.editor-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: var(--accent-cyan);
+}
+
+/* ─── Plain textarea (replaces n-input textarea) ───────────────── */
+.plain-textarea {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: none;
+  color: var(--text-primary);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.8125rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: background 0.2s;
+}
+
+.plain-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.plain-textarea:focus {
+  background: var(--bg-tertiary);
 }
 
 @media (max-width: 768px) {

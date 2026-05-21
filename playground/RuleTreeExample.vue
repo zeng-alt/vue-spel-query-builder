@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
-import { NButton, NSwitch, NSpace } from 'naive-ui'
+import { ref, reactive, computed, watch, inject } from 'vue'
 import { RuleTree } from '../src'
 import type { RuleTreeInstance, RuleNode } from '../src'
 import { createEmptyGroup } from '../src'
+
+const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
 
 const ruleTreeRef = ref<RuleTreeInstance>()
 
@@ -98,24 +99,23 @@ const handleChange = (rule) => {
             </div>
             <div class="control-group">
               <span class="control-label">状态</span>
-              <NSwitch v-model:value="disabled" size="small">
-                <template #checked>
-                  <span class="text-xs px-1">禁用</span>
-                </template>
-                <template #unchecked>
-                  <span class="text-xs px-1">启用</span>
-                </template>
-              </NSwitch>
+              <button
+                class="toggle-btn"
+                :class="{ 'toggle-btn--on': !disabled, 'toggle-btn--off': disabled }"
+                @click="disabled = !disabled"
+              >
+                <span class="toggle-btn__dot" />
+                <span class="toggle-btn__label">{{ disabled ? '禁用' : '启用' }}</span>
+              </button>
             </div>
           </div>
           <div class="config-editor">
-            <n-input
-              v-model:value="contextText"
-              type="textarea"
-              :rows="6"
+            <textarea
+              v-model="contextText"
+              class="plain-textarea"
+              rows="6"
               placeholder="配置上下文变量..."
-              class="config-input"
-            />
+            ></textarea>
           </div>
         </div>
 
@@ -145,7 +145,7 @@ const handleChange = (rule) => {
               }"
               :locals="context"
               :disabled="disabled"
-              theme="light"
+              :theme="playgroundTheme"
             />
           </div>
         </div>
@@ -161,12 +161,10 @@ const handleChange = (rule) => {
                 <p class="text-xs text-gray-500">SpEL 格式</p>
               </div>
             </div>
-            <NButton size="small" @click="handleCopyExpression">
-              <template #icon>
-                <span class="i-carbon-copy" />
-              </template>
+            <button class="plain-btn" @click="handleCopyExpression">
+              <span class="i-carbon-copy" />
               复制
-            </NButton>
+            </button>
           </div>
           <div class="output-display">
             <code class="expression-code">{{ spelExpression || '(空)' }}</code>
@@ -181,18 +179,14 @@ const handleChange = (rule) => {
             </div>
           </div>
           <div class="actions-grid">
-            <NButton size="large" block type="primary" @click="handleValidate">
-              <template #icon>
-                <span class="i-carbon-checkmark-outline" />
-              </template>
+            <button class="plain-btn plain-btn--primary" @click="handleValidate">
+              <span class="i-carbon-checkmark-outline" />
               验证规则
-            </NButton>
-            <NButton size="large" block @click="handleReset">
-              <template #icon>
-                <span class="i-carbon-renew" />
-              </template>
+            </button>
+            <button class="plain-btn" @click="handleReset">
+              <span class="i-carbon-renew" />
               重置
-            </NButton>
+            </button>
           </div>
         </div>
 
@@ -253,22 +247,6 @@ const handleChange = (rule) => {
 
 <style scoped>
 .rule-tree-example {
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #111111;
-  --bg-card: #0d0d0d;
-  --border-primary: #1a1a1a;
-  --border-secondary: #252525;
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1a1;
-  --text-muted: #525252;
-  --accent-cyan: #22d3ee;
-  --accent-purple: #a855f7;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-pink: #ec4899;
-  --accent-yellow: #eab308;
-
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -479,5 +457,121 @@ const handleChange = (rule) => {
   .actions-grid {
     grid-template-columns: 1fr;
   }
+}
+</style>
+
+/* ─── Toggle button (replaces NSwitch) ─────────────────────────── */
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 9999px;
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+.toggle-btn--on {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-emerald);
+}
+
+.toggle-btn--off {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.toggle-btn__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.toggle-btn--on .toggle-btn__dot {
+  background: var(--accent-emerald);
+}
+
+.toggle-btn--off .toggle-btn__dot {
+  background: #ef4444;
+}
+
+.toggle-btn__label {
+  font-weight: 500;
+}
+
+/* ─── Plain button (replaces NButton) ──────────────────────────── */
+.plain-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.plain-btn:hover {
+  border-color: var(--border-secondary);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.plain-btn--primary {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
+  border-color: rgba(34, 211, 238, 0.2);
+  color: var(--accent-cyan);
+}
+
+.plain-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: var(--accent-cyan);
+}
+
+.actions-grid .plain-btn,
+.actions-grid .plain-btn--primary {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* ─── Plain textarea (replaces n-input textarea) ───────────────── */
+.plain-textarea {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: none;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: background 0.2s;
+}
+
+.plain-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.plain-textarea:focus {
+  background: var(--bg-tertiary);
 }
 </style>
