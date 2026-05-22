@@ -3,7 +3,7 @@ import { computed, ref, watchEffect, watch } from 'vue'
 import type { RuleNode, FieldOption, LogicalOperator, Expression, ListFilter } from '../../types'
 import ExpressionEditor from './ExpressionEditor.vue'
 import { formatExpression } from '../../utils'
-import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
+import { spelService } from '../../spel-service'
 
 const props = withDefaults(defineProps<{
   node: RuleNode
@@ -90,8 +90,8 @@ watchEffect(() => {
   const exprStr = formatExpression(props.node.left)
   if (!exprStr) { leftType.value = null; return }
   try {
-    const context = StandardContext.create(props.authentication, props.principal)
-    const result = SpelExpressionEvaluator.eval(exprStr, context, props.locals)
+    spelService.setContext(props.authentication, props.principal)
+    const result = spelService.eval(exprStr, props.locals)
     leftType.value = getDetailedType(result)
   } catch { leftType.value = null }
 })

@@ -1,4 +1,4 @@
-import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
+import { spelService } from '../spel-service'
 import type { RuleNode, LogicalOperator, Expression } from '../types'
 
 export function generateId(): string {
@@ -7,7 +7,7 @@ export function generateId(): string {
 
 export function validateSpelExpression(expression: string): { valid: boolean; error?: string } {
   try {
-    SpelExpressionEvaluator.compile(expression)
+    spelService.compile(expression)
     return { valid: true }
   } catch (error) {
     return {
@@ -17,10 +17,10 @@ export function validateSpelExpression(expression: string): { valid: boolean; er
   }
 }
 
-export function evalSpelExpression(expression: string, context: Record<string, any>): any {
+export function evalSpelExpression(expression: string, locals: Record<string, any>): any {
   try {
-    const spelContext = StandardContext.create()
-    return SpelExpressionEvaluator.eval(expression, spelContext, context)
+    spelService.setContext()
+    return spelService.eval(expression, locals)
   } catch (error) {
     console.error('SpEL evaluation error:', error)
     return null

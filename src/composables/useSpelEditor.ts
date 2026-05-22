@@ -1,5 +1,5 @@
 import { ref, watch, computed } from 'vue'
-import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
+import { spelService } from '../spel-service'
 import { validateSpelExpression } from '../utils'
 import type { SpelEditorProps } from '../types'
 
@@ -30,8 +30,8 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
   const run = async (): Promise<any> => {
     try {
       const expression = internalValue.value
-      const spelContext = StandardContext.create(props.authentication, props.principal)
-      const result = SpelExpressionEvaluator.eval(expression, spelContext, props.locals)
+      spelService.setContext(props.authentication, props.principal)
+      const result = spelService.eval(expression, props.locals)
 
       emit('run', result, undefined)
       return result

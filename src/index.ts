@@ -1,3 +1,4 @@
+export { spelService } from './spel-service'
 export { SpelEditor, RuleTree } from './components'
 export type {
   SpelEditorProps,
