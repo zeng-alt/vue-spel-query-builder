@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, provide, type Ref } from 'vue'
+import { ref, provide, computed, type Ref } from 'vue'
 import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
 
@@ -11,6 +11,19 @@ provide<Ref<'light' | 'dark'>>('playgroundTheme', playgroundTheme)
 function toggleTheme() {
   playgroundTheme.value = playgroundTheme.value === 'dark' ? 'light' : 'dark'
 }
+
+const currentComponent = computed(() => {
+  switch (activeTab.value) {
+    case 'spel-editor':
+      return SpelEditorExample
+
+    case 'rule-tree':
+      return RuleTreeExample
+
+    default:
+      return SpelEditorExample
+  }
+})
 </script>
 
 <template>
@@ -26,7 +39,7 @@ function toggleTheme() {
             <p class="brand-subtitle">在线编辑器和可视化规则树 UI</p>
           </div>
         </div>
-        
+
         <div class="header-controls">
           <button class="theme-toggle" :title="playgroundTheme === 'dark' ? '切换到亮色' : '切换到暗色'" @click="toggleTheme">
             <span v-if="playgroundTheme === 'dark'" class="i-carbon-sun" />
@@ -53,8 +66,11 @@ function toggleTheme() {
             >规则树</button>
           </div>
           <div class="tab-content">
-            <SpelEditorExample v-if="activeTab === 'spel-editor'" />
-            <RuleTreeExample v-else-if="activeTab === 'rule-tree'" />
+            <!-- <SpelEditorExample v-if="activeTab === 'spel-editor'" />
+            <RuleTreeExample v-else-if="activeTab === 'rule-tree'" /> -->
+            <KeepAlive>
+              <component :is="currentComponent" />
+            </KeepAlive>
           </div>
         </div>
       </div>
@@ -333,25 +349,25 @@ function toggleTheme() {
   .header {
     padding: 1rem;
   }
-  
+
   .header-content {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .brand-title {
     font-size: 1.125rem;
   }
-  
+
   .main-content {
     padding: 1rem;
   }
-  
+
   .tabs-wrapper {
     padding: 0.75rem;
     border-radius: 12px;
   }
-  
+
   .footer-content {
     flex-direction: column;
     text-align: center;

@@ -712,15 +712,30 @@ const listFilterLiteralValue = computed(() => {
 
 /* ─── Action buttons ───────────────────────────────────────────── */
 .action-btn {
-  background: rgba(34, 211, 238, 0.12) !important;
-  border-color: rgba(34, 211, 238, 0.3) !important;
-  color: #22d3ee !important;
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+  color: #ffffff !important;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
 .action-btn:hover {
-  background: rgba(34, 211, 238, 0.2) !important;
-  border-color: rgba(34, 211, 238, 0.4) !important;
+  background: #6d28d9 !important;
+  border-color: #6d28d9 !important;
+
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.28);
 }
+
+.action-btn:active {
+  background: #5b21b6 !important;
+  border-color: #5b21b6 !important;
+}
+
 .action-btn:disabled {
   opacity: 0.5 !important;
+  box-shadow: none !important;
 }
 </style>
