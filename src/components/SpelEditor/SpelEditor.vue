@@ -286,7 +286,7 @@ watch(isDark, injectAutocompleteStyle, { immediate: true })
 // ═══════════════════════════════════════════════════════════════════════════
 const SPEL_KEYWORDS    = new Set(['true','false','null','and','or','not','instanceof','matches','new','div','mod'])
 const SPEL_BUILTIN_FNS = new Set(['contains','startsWith','endsWith','isEmpty','size','length',
-                                   'substring','toUpperCase','toLowerCase','trim','abs','round','floor','ceil'])
+                                   'substring','toUpperCase','toLowerCase','trim'])
 
 const spelLanguage = StreamLanguage.define({
   name: 'spel',
@@ -572,7 +572,6 @@ function buildTypeMap(): Record<string, string> {
 function buildStringMethodEntries(): SpelEntry[] {
   return [
     { label:'length',        type:'property', detail:'字符串长度',     desc:'返回字符串的字符数量。(属性访问，无需括号)',   extra:'principal.name.length'                                                  },
-    { label:'empty',         type:'property', detail:'判断为空',       desc:'判断字符串是否为空 (length === 0)。(属性访问，无需括号)', extra:"principal.name.empty"                                    },
     { label:'isEmpty()',    type:'function', detail:'判断为空',       desc:'判断字符串或集合长度是否为 0。',             extra:'principal.name.isEmpty()'                                               },
     { label:'toUpperCase()',type:'function', detail:'转大写',         desc:'将字符串转换为大写。',                       extra:'principal.name.toUpperCase()'                                           },
     { label:'toLowerCase()',type:'function', detail:'转小写',         desc:'将字符串转换为小写。',                       extra:'principal.name.toLowerCase()'                                           },
@@ -585,7 +584,6 @@ function buildStringMethodEntries(): SpelEntry[] {
     { label:'contains(x)',  type:'function', detail:'包含判断',       desc:'判断字符串是否包含指定子串。',               extra:"principal.name.contains('value')"                                       },
     { label:'indexOf(x)',   type:'function', detail:'查找索引',       desc:'返回指定字符在字符串中首次出现的位置索引。', extra:"principal.name.indexOf('a')"                                            },
     { label:'charAt(x)',    type:'function', detail:'获取字符',       desc:'返回字符串指定位置的字符。',                 extra:'principal.name.charAt(0)'                                               },
-    { label:'matches(x)',   type:'function', detail:'正则匹配',       desc:'使用正则表达式匹配字符串。',                 extra:"principal.name.matches('\\\\d+')"                                       },
   ]
 }
 
@@ -707,7 +705,7 @@ const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
   const slPattern = /('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\.([\w]*)$/
   const slMatch = beforeText.match(slPattern)
   if (slMatch) {
-    const partialMethod = slMatch[2] // 点号后已输入的部分方法名
+    const partialMethod = slMatch[2] ?? '' // 点号后已输入的部分方法名
     const dotPos = pos - partialMethod.length - 1
     const replaceFrom = dotPos + 1 // 从 '.' 之后开始替换，保留字面量
     const lowerPartial = partialMethod.toLowerCase()

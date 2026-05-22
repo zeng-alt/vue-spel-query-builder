@@ -36,10 +36,18 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
       emit('run', result, undefined)
       return result
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '执行表达式时发生错误'
+      const errorMessage = getErrorMessage(error) || '执行表达式时发生错误'
       emit('run', undefined, errorMessage)
       return undefined
     }
+  }
+
+  const getErrorMessage = (error: unknown): string => {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      return String(error.message)
+    }
+
+    return String(error)
   }
 
   const setValue = (value: string) => {

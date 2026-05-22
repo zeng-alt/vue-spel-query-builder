@@ -7,7 +7,6 @@ import type { Expression, FunctionCall, FunctionDef, FieldOption } from '../../t
 const FUNCTIONS: FunctionDef[] = [
   // 有调用方
   { label: 'length',        value: 'length',      argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'number' },
-  { label: 'empty',         value: 'empty',       argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'boolean' },
   { label: 'size()',        value: 'size()',        argumentCount: 0, hasBase: true, baseType: 'collection', returnType: 'number' },
   { label: 'toUpperCase()', value: 'toUpperCase()', argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
   { label: 'toLowerCase()', value: 'toLowerCase()', argumentCount: 0, hasBase: true, baseType: 'string', returnType: 'string' },
