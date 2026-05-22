@@ -544,6 +544,117 @@ function buildEntries(): SpelEntry[] {
   return list
 }
 
+// ─── 数组元信息 ─────────────────────────────────────────────────────────────
+interface ArrayMeta {
+  /** 元素类型: 'string' | 'number' | 'object' */
+  elementType: string
+  /** 对象数组时，元素对象的字段列表 */
+  elementFields?: { label: string; value: string; type: string }[]
+}
+
+/**
+ * 从 props 数据模型中构建 array path → ArrayMeta 映射。
+ * 用于数组上下文感知补全（size() / ?[...] / ![field] 等）。
+ */
+function buildArrayMeta(): Record<string, ArrayMeta> {
+  const meta: Record<string, ArrayMeta> = {}
+
+  function walkArr(obj: any, prefix: string) {
+    if (!obj || typeof obj !== 'object') return
+    for (const key of Object.keys(obj)) {
+      const fullPath = prefix ? `${prefix}.${key}` : key
+      const val = obj[key]
+      if (Array.isArray(val)) {
+        if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
+          const fields = Object.keys(val[0]).map(k => ({
+            label: k, value: k, type: typeof val[0][k],
+          }))
+          meta[fullPath] = { elementType: 'object', elementFields: fields }
+        } else if (val.length > 0) {
+          meta[fullPath] = { elementType: typeof val[0] }
+        } else {
+          meta[fullPath] = { elementType: 'string' }
+        }
+      } else if (typeof val === 'object' && val !== null) {
+        walkArr(val, fullPath)
+      }
+    }
+  }
+
+  if (props.authentication) walkArr(props.authentication, 'authentication')
+  if (props.principal)      walkArr(props.principal, 'principal')
+
+  if (props.locals) {
+    for (const key of Object.keys(props.locals)) {
+      const fullPath = `#${key}`
+      const val = props.locals[key]
+      if (Array.isArray(val)) {
+        if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
+          const fields = Object.keys(val[0]).map(k => ({
+            label: k, value: k, type: typeof val[0][k],
+          }))
+          meta[fullPath] = { elementType: 'object', elementFields: fields }
+        } else if (val.length > 0) {
+          meta[fullPath] = { elementType: typeof val[0] }
+        } else {
+          meta[fullPath] = { elementType: 'string' }
+        }
+      } else if (typeof val === 'object' && val !== null) {
+        walkArr(val, fullPath)
+      }
+    }
+  }
+
+  return meta
+}
+
+/**
+ * 数组方法补全条目，在已知数组属性后输入 . 时触发。
+ * @param am 数组元信息（可选），用于生成精准的过滤/投影示例
+ */
+function buildArrayMethodEntries(am?: ArrayMeta): SpelEntry[] {
+  const entries: SpelEntry[] = [
+    { label:'size()',      type:'function', detail:'集合大小',
+      desc:'返回数组/集合的元素数量。',                        extra:'...roles.size() > 0' },
+    { label:'isEmpty()',   type:'function', detail:'判断为空',
+      desc:'判断数组/集合长度是否为 0。',                       extra:'...roles.isEmpty()' },
+    { label:'contains(x)', type:'function', detail:'包含判断',
+      desc:'判断数组中是否包含指定的元素。',                    extra:"...roles.contains('admin')" },
+    { label:'get(x)',      type:'function', detail:'获取元素',
+      desc:'返回指定索引位置的数组元素。',                      extra:'...roles.get(0)' },
+  ]
+
+  if (am?.elementType === 'object' && am.elementFields) {
+    const fieldList = am.elementFields.map(f => f.label).join(', ')
+    entries.push({
+      label:'?[field == x]',  type:'function', detail:'过滤-对象数组',
+      desc:`使用条件过滤对象数组，返回符合条件的子数组。可用字段：${fieldList}`,
+      extra:`...roles.?[${am.elementFields[0]?.label ?? 'field'} == value]`,
+    })
+    entries.push({
+      label:'![field]',       type:'function', detail:'投影-提取字段',
+      desc:'从对象数组中提取指定字段的值，返回新数组。',
+      extra:'...roles.![code]',
+    })
+    for (const f of am.elementFields) {
+      entries.push({
+        label:`[0].${f.label}`,  type:'property', detail:'数组元素字段',
+        desc:`数组元素的 ${f.label} 字段，类型 ${f.type}`,
+        extra:`...roles[0].${f.label}`,
+      })
+    }
+  } else {
+    const elType = am?.elementType ?? 'string'
+    entries.push({
+      label:'?[#this == x]', type:'function', detail:'过滤-基本类型数组',
+      desc:`使用条件过滤数组元素（#this 表示当前元素）。当前元素类型: ${elType}`,
+      extra:"...roles.?[#this == 'value']",
+    })
+  }
+
+  return entries
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 类型推断辅助：从 props 数据模型中构建 path → type 映射
 // ═══════════════════════════════════════════════════════════════════════════
@@ -745,20 +856,30 @@ const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
 
   const text = word.text
 
-  // ── 3) 上下文感知：已知字符串属性后输入 '.' 触发方法提示 ───────
+  // ── 3) 上下文感知：已知字符串/数组属性后输入 '.' 触发方法提示 ──
   const dotIndex = text.lastIndexOf('.')
   if (dotIndex > 0) {
     const basePath = text.slice(0, dotIndex)
     const partialMethod = text.slice(dotIndex + 1)
+    const lowerPartial = partialMethod.toLowerCase()
     const typeMap = buildTypeMap()
-    if (typeMap[basePath] === 'string') {
-      const lowerPartial = partialMethod.toLowerCase()
+    const type = typeMap[basePath]
+
+    // 3a) 字符串方法
+    if (type === 'string') {
       const options: Completion[] = buildStringMethodEntries()
         .filter(e => e.label.toLowerCase().startsWith(lowerPartial))
-        .map(e => ({
-          label: e.label, type: e.type, detail: e.detail,
-        }))
-      // from 从 '.' 之后开始，这样选择补全后保留 basePath
+        .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+      return { from: word.from + dotIndex + 1, options }
+    }
+
+    // 3b) 数组方法
+    if (type === 'array') {
+      const arrayMeta = buildArrayMeta()
+      const am = arrayMeta[basePath]
+      const options: Completion[] = buildArrayMethodEntries(am)
+        .filter(e => e.label.toLowerCase().startsWith(lowerPartial))
+        .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
       return { from: word.from + dotIndex + 1, options }
     }
   }
