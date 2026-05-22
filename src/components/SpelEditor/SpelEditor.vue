@@ -931,11 +931,12 @@ const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
     return { from: replaceFrom, options }
   }
 
-  // ── 2) .?[ 过滤上下文补全（字段/方法/#this 提示）────────────────
-  const filterMatch = beforeText.match(/(\w+(?:\.\w+)*)\.\?\[([^\[\]]*)$/)
+  // ── 2) .?[ / .![ 过滤/投影上下文补全（字段/方法/#this 提示）───
+  const filterMatch = beforeText.match(/(\w+(?:\.\w+)*)\.([?!])\[([^\[\]]*)$/)
   if (filterMatch) {
     const arrayPath = filterMatch[1]!
-    const insideBrackets = filterMatch[2]!
+    const bracketOp = filterMatch[2]!   // '?' 或 '!'
+    const insideBrackets = filterMatch[3]!
     const arrayMeta = buildArrayMeta()
     const am = arrayMeta[arrayPath]
     if (am) {
