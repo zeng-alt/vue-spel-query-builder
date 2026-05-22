@@ -520,6 +520,77 @@ function buildEntries(): SpelEntry[] {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 类型推断辅助：从 props 数据模型中构建 path → type 映射
+// ═══════════════════════════════════════════════════════════════════════════
+function buildTypeMap(): Record<string, string> {
+  const map: Record<string, string> = {}
+
+  function walk(obj: any, prefix: string) {
+    if (!obj || typeof obj !== 'object') return
+    for (const key of Object.keys(obj)) {
+      const fullPath = prefix ? `${prefix}.${key}` : key
+      const val = obj[key]
+      if (val === null || val === undefined) {
+        map[fullPath] = 'null'
+      } else if (Array.isArray(val)) {
+        map[fullPath] = 'array'
+      } else if (typeof val === 'object') {
+        map[fullPath] = 'object'
+        walk(val, fullPath)
+      } else {
+        map[fullPath] = typeof val
+      }
+    }
+  }
+
+  if (props.authentication) walk(props.authentication, 'authentication')
+  if (props.principal)      walk(props.principal, 'principal')
+
+  if (props.locals) {
+    for (const key of Object.keys(props.locals)) {
+      const fullPath = `#${key}`
+      const val = props.locals[key]
+      if (val === null || val === undefined) {
+        map[fullPath] = 'null'
+      } else if (Array.isArray(val)) {
+        map[fullPath] = 'array'
+      } else if (typeof val === 'object') {
+        map[fullPath] = 'object'
+        walk(val, fullPath)
+      } else {
+        map[fullPath] = typeof val
+      }
+    }
+  }
+
+  return map
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 字符串方法补全条目（上下文感知：在已知字符串属性后 . 触发）
+// ═══════════════════════════════════════════════════════════════════════════
+function buildStringMethodEntries(): SpelEntry[] {
+  return [
+    { label:'length',        type:'property', detail:'字符串长度',     desc:'返回字符串的字符数量。(属性访问，无需括号)',   extra:'principal.name.length'                                                  },
+    { label:'empty',         type:'property', detail:'判断为空',       desc:'判断字符串是否为空 (length === 0)。(属性访问，无需括号)', extra:"principal.name.empty"                                    },
+    { label:'isEmpty()',    type:'function', detail:'判断为空',       desc:'判断字符串或集合长度是否为 0。',             extra:'principal.name.isEmpty()'                                               },
+    { label:'toUpperCase()',type:'function', detail:'转大写',         desc:'将字符串转换为大写。',                       extra:'principal.name.toUpperCase()'                                           },
+    { label:'toLowerCase()',type:'function', detail:'转小写',         desc:'将字符串转换为小写。',                       extra:'principal.name.toLowerCase()'                                           },
+    { label:'trim()',       type:'function', detail:'去除空格',       desc:'去除字符串首尾空白字符。',                   extra:'principal.name.trim()'                                                  },
+    { label:'substring(x)', type:'function', detail:'子串截取(1参)',  desc:'从指定位置截取到末尾的子字符串。',           extra:'principal.name.substring(3)'                                            },
+    { label:'substring(x,y)',type:'function',detail:'子串截取(2参)',  desc:'从起始位置截取到结束位置的子字符串。',       extra:'principal.name.substring(0, 3)'                                          },
+    { label:'replace(x,y)', type:'function', detail:'字符串替换',     desc:'将字符串中的指定字符替换为新字符。',          extra:"principal.name.replace('old', 'new')"                                    },
+    { label:'startsWith(x)',type:'function', detail:'前缀匹配',       desc:'判断字符串是否以指定前缀开头。',             extra:"principal.name.startsWith('prefix')"                                    },
+    { label:'endsWith(x)',  type:'function', detail:'后缀匹配',       desc:'判断字符串是否以指定后缀结尾。',             extra:"principal.name.endsWith('suffix')"                                      },
+    { label:'contains(x)',  type:'function', detail:'包含判断',       desc:'判断字符串是否包含指定子串。',               extra:"principal.name.contains('value')"                                       },
+    { label:'indexOf(x)',   type:'function', detail:'查找索引',       desc:'返回指定字符在字符串中首次出现的位置索引。', extra:"principal.name.indexOf('a')"                                            },
+    { label:'charAt(x)',    type:'function', detail:'获取字符',       desc:'返回字符串指定位置的字符。',                 extra:'principal.name.charAt(0)'                                               },
+    { label:'matches(x)',   type:'function', detail:'正则匹配',       desc:'使用正则表达式匹配字符串。',                 extra:"principal.name.matches('\\\\d+')"                                       },
+  ]
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
 // hoverTooltip DOM 构建（读取当前主题内联样式）
 // ═══════════════════════════════════════════════════════════════════════════
 function buildHoverTooltipDom(entry: SpelEntry): HTMLElement {
@@ -629,8 +700,48 @@ const spelHoverTooltip = computed(() =>
 // ─── 自动补全源 ───────────────────────────────────────────────────────────
 const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
   const word = ctx.matchBefore(/[#a-zA-Z_][\w#.]*/)
+
+  // ── 1) 尝试字面量字符串上下文：'hello'. 或 "hello". ────────────
+  const pos = ctx.pos
+  const beforeText = ctx.state.sliceDoc(Math.max(0, pos - 200), pos)
+  const slPattern = /('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\.([\w]*)$/
+  const slMatch = beforeText.match(slPattern)
+  if (slMatch) {
+    const partialMethod = slMatch[2] // 点号后已输入的部分方法名
+    const dotPos = pos - partialMethod.length - 1
+    const replaceFrom = dotPos + 1 // 从 '.' 之后开始替换，保留字面量
+    const lowerPartial = partialMethod.toLowerCase()
+    const options: Completion[] = buildStringMethodEntries()
+      .filter(e => e.label.toLowerCase().startsWith(lowerPartial))
+      .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+    return { from: replaceFrom, options }
+  }
+
+  // ── 2) 没有有效匹配则退出 ──────────────────────────────────────
   if (!word || (word.from === word.to && !ctx.explicit)) return null
-  const lower = word.text.toLowerCase()
+
+  const text = word.text
+
+  // ── 3) 上下文感知：已知字符串属性后输入 '.' 触发方法提示 ───────
+  const dotIndex = text.lastIndexOf('.')
+  if (dotIndex > 0) {
+    const basePath = text.slice(0, dotIndex)
+    const partialMethod = text.slice(dotIndex + 1)
+    const typeMap = buildTypeMap()
+    if (typeMap[basePath] === 'string') {
+      const lowerPartial = partialMethod.toLowerCase()
+      const options: Completion[] = buildStringMethodEntries()
+        .filter(e => e.label.toLowerCase().startsWith(lowerPartial))
+        .map(e => ({
+          label: e.label, type: e.type, detail: e.detail,
+        }))
+      // from 从 '.' 之后开始，这样选择补全后保留 basePath
+      return { from: word.from + dotIndex + 1, options }
+    }
+  }
+
+  // ── 4) 默认：全局条目前缀过滤 ─────────────────────────────────
+  const lower = text.toLowerCase()
   const options: Completion[] = buildEntries()
     .filter(e => e.label.toLowerCase().startsWith(lower))
     .map(e => ({
