@@ -545,11 +545,50 @@ function buildEntries(): SpelEntry[] {
 }
 
 // ─── 数组元信息 ─────────────────────────────────────────────────────────────
+interface ElementField {
+  label: string
+  value: string
+  type: string            // 'string' | 'number' | 'boolean' | 'object' | 'array'
+  children?: ElementField[]   // 嵌套对象的子字段
+  elementType?: string        // 数组字段的元素类型
+  elementFields?: ElementField[]  // 对象数组字段的元素字段列表
+}
+
 interface ArrayMeta {
   /** 元素类型: 'string' | 'number' | 'object' */
   elementType: string
-  /** 对象数组时，元素对象的字段列表 */
-  elementFields?: { label: string; value: string; type: string }[]
+  /** 对象数组时，元素对象的递归字段树 */
+  elementFields?: ElementField[]
+}
+
+/** 递归构建一个对象的字段树 */
+function buildElementFields(obj: any): ElementField[] {
+  if (!obj || typeof obj !== 'object') return []
+  const fields: ElementField[] = []
+  for (const key of Object.keys(obj)) {
+    const val = obj[key]
+    const field: ElementField = { label: key, value: key, type: 'null' }
+    if (val === null || val === undefined) {
+      field.type = 'null'
+    } else if (Array.isArray(val)) {
+      field.type = 'array'
+      if (val.length > 0) {
+        field.elementType = typeof val[0]
+        if (typeof val[0] === 'object' && val[0] !== null) {
+          field.elementFields = buildElementFields(val[0])
+        }
+      } else {
+        field.elementType = 'string'
+      }
+    } else if (typeof val === 'object') {
+      field.type = 'object'
+      field.children = buildElementFields(val)
+    } else {
+      field.type = typeof val
+    }
+    fields.push(field)
+  }
+  return fields
 }
 
 /**
@@ -566,10 +605,7 @@ function buildArrayMeta(): Record<string, ArrayMeta> {
       const val = obj[key]
       if (Array.isArray(val)) {
         if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
-          const fields = Object.keys(val[0]).map(k => ({
-            label: k, value: k, type: typeof val[0][k],
-          }))
-          meta[fullPath] = { elementType: 'object', elementFields: fields }
+          meta[fullPath] = { elementType: 'object', elementFields: buildElementFields(val[0]) }
         } else if (val.length > 0) {
           meta[fullPath] = { elementType: typeof val[0] }
         } else {
@@ -590,10 +626,7 @@ function buildArrayMeta(): Record<string, ArrayMeta> {
       const val = props.locals[key]
       if (Array.isArray(val)) {
         if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
-          const fields = Object.keys(val[0]).map(k => ({
-            label: k, value: k, type: typeof val[0][k],
-          }))
-          meta[fullPath] = { elementType: 'object', elementFields: fields }
+          meta[fullPath] = { elementType: 'object', elementFields: buildElementFields(val[0]) }
         } else if (val.length > 0) {
           meta[fullPath] = { elementType: typeof val[0] }
         } else {
@@ -606,6 +639,57 @@ function buildArrayMeta(): Record<string, ArrayMeta> {
   }
 
   return meta
+}
+
+/**
+ * 根据 ElementField 树，构建 ?[...] 过滤上下文中可补全的字段条目。
+ * @param fields  当前层级的字段列表
+ * @param prefix  字段路径前缀（空字符串表示根层级）
+ */
+function buildFilterFieldEntries(fields: ElementField[], prefix: string = ''): SpelEntry[] {
+  const entries: SpelEntry[] = []
+  for (const f of fields) {
+    const fullName = prefix ? `${prefix}.${f.label}` : f.label
+    let typeLabel = f.type
+    if (f.type === 'array') typeLabel = `array<${f.elementType ?? '?'}>`
+    else if (f.type === 'object') typeLabel = 'object'
+    entries.push({
+      label: f.label,
+      type: 'property',
+      detail: typeLabel,
+      desc: f.type === 'object'
+        ? `对象字段 ${f.label}，包含 ${f.children?.length ?? 0} 个子字段`
+        : f.type === 'array'
+          ? `数组字段 ${f.label}，元素类型 ${f.elementType ?? 'any'}`
+          : `字段 ${f.label}，类型 ${f.type}`,
+      extra: `...?[${fullName} ...]`,
+    })
+  }
+  return entries
+}
+
+/**
+ * 在 ElementField 树中按点号分隔路径查找指定字段。
+ * 例如 resolveFieldPath(fields, 'address.city') 返回 city 字段的 ElementField。
+ */
+function resolveFieldPath(fields: ElementField[], path: string): ElementField | null {
+  const parts = path.split('.')
+  let current: ElementField | null = null
+  let pool = fields
+  for (const part of parts) {
+    current = pool.find(f => f.label === part) ?? null
+    if (!current) return null
+    if (current.type === 'object' && current.children) {
+      pool = current.children
+    } else if (current.type === 'array' && current.elementFields) {
+      pool = current.elementFields
+    } else if (current.type === 'array') {
+      // 基本类型数组，没有子字段
+      return current
+    }
+    // 基本类型字段，继续
+  }
+  return current
 }
 
 /**
@@ -847,12 +931,53 @@ const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
     return { from: replaceFrom, options }
   }
 
-  // ── 2) 没有有效匹配则退出 ──────────────────────────────────────
+  // ── 2) .?[ 过滤上下文补全（对象数组的字段提示）─────────────────
+  const filterMatch = beforeText.match(/(\w+(?:\.\w+)*)\.\?\[([^\[\]]*)$/)
+  if (filterMatch) {
+    const arrayPath = filterMatch[1]!
+    const insideBrackets = filterMatch[2]!
+    const arrayMeta = buildArrayMeta()
+    const am = arrayMeta[arrayPath]
+    if (am?.elementType === 'object' && am.elementFields) {
+      // 检查是否在输入嵌套字段（xxx.）
+      const dotIdx = insideBrackets.lastIndexOf('.')
+      if (dotIdx >= 0) {
+        // 在点号之后，查找子字段
+        const fieldPrefix = insideBrackets.slice(0, dotIdx)
+        const partialField = insideBrackets.slice(dotIdx + 1)
+        const partialLower = partialField.toLowerCase()
+        // 沿着 fieldPrefix 查找嵌套字段
+        const resolved = resolveFieldPath(am.elementFields, fieldPrefix)
+        if (resolved?.type === 'object' && resolved.children) {
+          const options: Completion[] = buildFilterFieldEntries(resolved.children, fieldPrefix)
+            .filter(e => e.label.toLowerCase().startsWith(partialLower))
+            .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+          return { from: pos - partialField.length, options }
+        }
+        if (resolved?.type === 'array' && resolved.elementFields) {
+          // 数组字段内过滤，提示元素字段
+          const options: Completion[] = buildFilterFieldEntries(resolved.elementFields, fieldPrefix)
+            .filter(e => e.label.toLowerCase().startsWith(partialLower))
+            .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+          return { from: pos - partialField.length, options }
+        }
+      } else {
+        // 根层级字段补全
+        const partialLower = insideBrackets.toLowerCase()
+        const options: Completion[] = buildFilterFieldEntries(am.elementFields)
+          .filter(e => e.label.toLowerCase().startsWith(partialLower))
+          .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+        return { from: pos - insideBrackets.length, options }
+      }
+    }
+  }
+
+  // ── 3) 没有有效匹配则退出 ──────────────────────────────────────
   if (!word || (word.from === word.to && !ctx.explicit)) return null
 
   const text = word.text
 
-  // ── 3) 上下文感知：已知字符串/数组属性后输入 '.' 触发方法提示 ──
+  // ── 4) 上下文感知：已知字符串/数组属性后输入 '.' 触发方法提示 ──
   const dotIndex = text.lastIndexOf('.')
   if (dotIndex > 0) {
     const basePath = text.slice(0, dotIndex)
