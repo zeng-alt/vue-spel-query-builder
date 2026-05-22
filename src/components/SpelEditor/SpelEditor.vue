@@ -931,58 +931,92 @@ const spelCompletionSource: CompletionSource = (ctx: CompletionContext) => {
     return { from: replaceFrom, options }
   }
 
-  // ── 2) .?[ 过滤上下文补全（对象数组的字段提示）─────────────────
+  // ── 2) .?[ 过滤上下文补全（字段/方法/#this 提示）────────────────
   const filterMatch = beforeText.match(/(\w+(?:\.\w+)*)\.\?\[([^\[\]]*)$/)
   if (filterMatch) {
     const arrayPath = filterMatch[1]!
     const insideBrackets = filterMatch[2]!
     const arrayMeta = buildArrayMeta()
     const am = arrayMeta[arrayPath]
-    if (am?.elementType === 'object' && am.elementFields) {
+    if (am) {
       const dotIdx = insideBrackets.lastIndexOf('.')
       if (dotIdx >= 0) {
-        // 在点号之后：根据字段类型提供相应的方法/属性/子字段提示
+        // ── 点号后：根据字段/#this 的类型提供方法/属性提示 ──
         const fieldPrefix = insideBrackets.slice(0, dotIdx)
         const partialField = insideBrackets.slice(dotIdx + 1)
         const partialLower = partialField.toLowerCase()
-        const resolved = resolveFieldPath(am.elementFields, fieldPrefix)
-        if (resolved) {
-          const from = pos - partialField.length
-          // 对象 → 子字段
-          if (resolved.type === 'object' && resolved.children) {
-            const options: Completion[] = buildFilterFieldEntries(resolved.children, fieldPrefix)
-              .filter(e => e.label.toLowerCase().startsWith(partialLower))
-              .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
-            return { from, options }
-          }
-          // 字符串 → 字符串方法
-          if (resolved.type === 'string') {
+        const from = pos - partialField.length
+
+        // #this 表示当前数组元素，根据 elementType 提供提示
+        if (fieldPrefix === '#this') {
+          const elType = am.elementType
+          if (elType === 'string') {
             const options: Completion[] = buildStringMethodEntries()
               .filter(e => e.label.toLowerCase().startsWith(partialLower))
               .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
             return { from, options }
           }
-          // 数组 → 数组方法/元素字段
-          if (resolved.type === 'array') {
-            if (resolved.elementFields) {
-              // 对象数组：提示元素的对象字段
-              const options: Completion[] = buildFilterFieldEntries(resolved.elementFields, fieldPrefix)
-                .filter(e => e.label.toLowerCase().startsWith(partialLower))
-                .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
-              return { from, options }
-            }
-            // 基本类型数组：提示数组方法
-            const arrAm: ArrayMeta = { elementType: resolved.elementType ?? 'string' }
+          if (elType === 'array') {
+            const arrAm: ArrayMeta = { elementType: am.elementType }
             const options: Completion[] = buildArrayMethodEntries(arrAm)
               .filter(e => e.label.toLowerCase().startsWith(partialLower))
               .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
             return { from, options }
           }
         }
+
+        // 对象数组：沿着字段路径查找，提供类型感知提示
+        if (am.elementType === 'object' && am.elementFields) {
+          const resolved = resolveFieldPath(am.elementFields, fieldPrefix)
+          if (resolved) {
+            if (resolved.type === 'object' && resolved.children) {
+              const options: Completion[] = buildFilterFieldEntries(resolved.children, fieldPrefix)
+                .filter(e => e.label.toLowerCase().startsWith(partialLower))
+                .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+              return { from, options }
+            }
+            if (resolved.type === 'string') {
+              const options: Completion[] = buildStringMethodEntries()
+                .filter(e => e.label.toLowerCase().startsWith(partialLower))
+                .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+              return { from, options }
+            }
+            if (resolved.type === 'array') {
+              if (resolved.elementFields) {
+                const options: Completion[] = buildFilterFieldEntries(resolved.elementFields, fieldPrefix)
+                  .filter(e => e.label.toLowerCase().startsWith(partialLower))
+                  .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+                return { from, options }
+              }
+              const arrAm: ArrayMeta = { elementType: resolved.elementType ?? 'string' }
+              const options: Completion[] = buildArrayMethodEntries(arrAm)
+                .filter(e => e.label.toLowerCase().startsWith(partialLower))
+                .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
+              return { from, options }
+            }
+          }
+        }
       } else {
-        // 根层级：提示元素对象的根字段
+        // ── 根层级：提示字段名 + #this ──
         const partialLower = insideBrackets.toLowerCase()
-        const options: Completion[] = buildFilterFieldEntries(am.elementFields)
+        const allEntries: SpelEntry[] = []
+
+        // 对象数组：添加元素字段
+        if (am.elementType === 'object' && am.elementFields) {
+          allEntries.push(...buildFilterFieldEntries(am.elementFields))
+        }
+
+        // 所有数组都添加 #this（表示当前元素）
+        const elTypeLabel = am.elementType ?? 'any'
+        allEntries.push({
+          label: '#this',
+          type: 'variable',
+          detail: elTypeLabel,
+          desc: `当前数组元素，类型 ${elTypeLabel}`,
+          extra: `...?[#this ...]`,
+        })
+
+        const options: Completion[] = allEntries
           .filter(e => e.label.toLowerCase().startsWith(partialLower))
           .map(e => ({ label: e.label, type: e.type, detail: e.detail }))
         return { from: pos - insideBrackets.length, options }
