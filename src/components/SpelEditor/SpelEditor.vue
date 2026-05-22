@@ -616,12 +616,8 @@ function buildArrayMethodEntries(am?: ArrayMeta): SpelEntry[] {
   const entries: SpelEntry[] = [
     { label:'size()',      type:'function', detail:'集合大小',
       desc:'返回数组/集合的元素数量。',                        extra:'...roles.size() > 0' },
-    { label:'isEmpty()',   type:'function', detail:'判断为空',
-      desc:'判断数组/集合长度是否为 0。',                       extra:'...roles.isEmpty()' },
     { label:'contains(x)', type:'function', detail:'包含判断',
       desc:'判断数组中是否包含指定的元素。',                    extra:"...roles.contains('admin')" },
-    { label:'get(x)',      type:'function', detail:'获取元素',
-      desc:'返回指定索引位置的数组元素。',                      extra:'...roles.get(0)' },
   ]
 
   if (am?.elementType === 'object' && am.elementFields) {
