@@ -83,7 +83,7 @@ const completionSource: import('@codemirror/autocomplete').CompletionSource = (c
   const before = ctx.state.sliceDoc(Math.max(0, pos - 200), pos)
   const lm = before.match(/('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\.([\w]*)$/)
   if (lm) return { from: pos - (lm[2]?.length ?? 0), options: toO(buildStringMethodEntries(), lm[2] ?? '') }
-  const fm = before.match(/(\w+(?:\.\w+)*)\.([?!])\[([^\[\]]*)$/)
+  const fm = before.match(/(\w+(?:\.\w+)*)\.([?!])[[]([^[\]]*)$/)
   if (fm) { const r = filterCtx(fm[1]!, fm[3]!, pos); if (r) return r }
   if (!word || (word.from === word.to && !ctx.explicit)) return null
   const text = word.text; const di = text.lastIndexOf('.')

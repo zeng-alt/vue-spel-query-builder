@@ -16,6 +16,7 @@ const authentication = reactive({
     email: 'john@example.com',
     roles: ['admin', 'user'],
   },
+  users: [{ name: 'John', age: 25, address: { city: 'New York', street: 'Main St' }, tags: ['a','b'] }],
   authenticated: true,
 })
 
