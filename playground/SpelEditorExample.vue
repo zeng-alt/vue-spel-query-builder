@@ -4,6 +4,7 @@ import { SpelEditor } from '../src'
 import type { SpelEditorInstance } from '../src'
 
 const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
+const playgroundSize = inject<import('vue').Ref<import('../src').ComponentSize>>('playgroundSize')!
 
 const spelExpression = ref('authentication.details.name')
 
@@ -156,6 +157,7 @@ const formatResult = (result: any): string => {
           :locals="locals"
           :height="280"
           :theme="playgroundTheme"
+          :size="playgroundSize"
           @validate="handleValidate"
           @change="handleChange"
           @run="handleRun"

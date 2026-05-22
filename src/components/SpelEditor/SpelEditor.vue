@@ -28,10 +28,13 @@ import { closeBrackets, closeBracketsKeymap,
 import { tags } from '@lezer/highlight'
 
 import { useSpelEditor } from '../../composables'
-import type { SpelEditorProps, SpelEditorEmits, SpelEditorInstance } from '../../types'
+import type { SpelEditorProps, SpelEditorEmits, SpelEditorInstance, ComponentSize } from '../../types'
 
 // ─── Props / Emits ────────────────────────────────────────────────────────
-const props = defineProps<SpelEditorProps>()
+const props = withDefaults(defineProps<SpelEditorProps>(), {
+  theme: 'dark',
+  size: 'small',
+})
 const emit  = defineEmits<SpelEditorEmits>()
 
 const { internalValue, validation, handleInput, handleValidate, setValue, getValue, run } =
@@ -49,6 +52,28 @@ const containerStyle = computed(() => {
   if (typeof props.height === 'number') return { height: `${props.height}px` }
   if (props.height)                     return { height: props.height }
   return { minHeight: '200px' }
+})
+
+// ─── Size → 字体大小 ──────────────────────────────────────────────────────
+const sizeFontMap: Record<ComponentSize, number> = { tiny: 12, small: 13, medium: 14, large: 15 }
+const editorFontSize = computed(() => sizeFontMap[props.size ?? 'small'])
+
+// ─── Size → 标题栏 / 错误栏样式 ──────────────────────────────────────────
+const headerPaddingClass = computed(() => {
+  switch (props.size ?? 'small') {
+    case 'tiny':   return 'px-2 py-1'
+    case 'small':  return 'px-4 py-2'
+    case 'medium': return 'px-5 py-2.5'
+    case 'large':  return 'px-6 py-3'
+  }
+})
+const headerTitleClass = computed(() => {
+  switch (props.size ?? 'small') {
+    case 'tiny':   return 'text-xs'
+    case 'small':  return 'text-sm'
+    case 'medium': return 'text-base'
+    case 'large':  return 'text-lg'
+  }
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -425,7 +450,7 @@ const spelTheme = computed(() =>
     '&'                        : { height: '100%', backgroundColor: T.value.editorBg },
     '.cm-scroller'             : { overflow: 'auto', backgroundColor: T.value.editorBg,
                                     fontFamily: "'Fira Code','JetBrains Mono','Monaco','Consolas',monospace",
-                                    fontSize: '14px' },
+                                    fontSize: `${editorFontSize.value}px` },
     '.cm-content'              : { caretColor: T.value.cursor, color: T.value.contentFg, padding: '12px' },
     '.cm-line'                 : { color: T.value.contentFg, padding: '2px 0' },
     '.cm-cursor'               : { borderLeftColor: T.value.cursor, borderLeftWidth: '2px' },
@@ -795,17 +820,18 @@ watch(() => props.modelValue, (newVal) => {
 <template>
   <div
     class="spel-editor-wrap rounded-lg overflow-hidden shadow-lg"
-    :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+    :class="[isDark ? 'border-gray-700' : 'border-gray-200', `size--${size}`]"
     :style="[containerStyle, { borderWidth: '1px', borderStyle: 'solid' }]"
   >
     <!-- 标题栏（渐变随主题变化）-->
     <div
-      class="flex items-center justify-between px-4 py-2 select-none"
+      class="flex items-center justify-between select-none"
+      :class="headerPaddingClass"
       :style="{
         background: `linear-gradient(to right, ${T.headerFrom}, ${T.headerTo})`
       }"
     >
-      <span class="flex items-center gap-2 text-white text-sm font-medium">
+      <span class="flex items-center gap-2 text-white font-medium" :class="headerTitleClass">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
@@ -876,4 +902,16 @@ watch(() => props.modelValue, (newVal) => {
 .spel-err-leave-active { transition: all .2s ease; }
 .spel-err-enter-from,
 .spel-err-leave-to     { opacity: 0; transform: translateY(-4px); }
+
+/* ─── Size variants ───────────────────────────────────────────── */
+.size--tiny :deep(.cm-content) { padding: 8px !important; }
+.size--small :deep(.cm-content) { padding: 12px !important; }
+.size--medium :deep(.cm-content) { padding: 16px !important; }
+.size--large :deep(.cm-content) { padding: 20px !important; }
+
+.size--tiny :deep(.cm-gutters) { min-width: 36px; }
+.size--tiny :deep(.cm-lineNumbers .cm-gutterElement) { font-size: 10px; padding: 0 6px; }
+.size--small :deep(.cm-gutters) { min-width: 48px; }
+.size--medium :deep(.cm-gutters) { min-width: 52px; }
+.size--large :deep(.cm-gutters) { min-width: 56px; }
 </style>

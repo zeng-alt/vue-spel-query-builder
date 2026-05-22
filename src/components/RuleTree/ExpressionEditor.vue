@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
-import type { Expression, FunctionCall, FunctionDef, FieldOption } from '../../types'
+import type { Expression, FunctionCall, FunctionDef, FieldOption, ComponentSize } from '../../types'
 
 // ─── 扩展的函数定义（增加 returnType） ────────────────────────
 
@@ -38,10 +38,12 @@ const props = withDefaults(defineProps<{
   allowFunction?: boolean
   baseTypeFilter?: string     // 外部传入的调用方类型过滤条件
   forceNumberInput?: boolean   // 新增
+  size?: ComponentSize
 }>(), {
   modelValue: () => ({ type: 'field', path: '' }),
   allowLiteral: true,
   allowFunction: true,
+  size: 'small',
 })
 
 const emit = defineEmits<{
@@ -179,7 +181,7 @@ watchEffect(() => {
       <n-input-number
         :value="safeLiteralValue !== '' ? Number(safeLiteralValue) : null"
         placeholder="数字…"
-        size="small"
+        :size="size"
         :disabled="disabled"
         class="!w-[120px]"
         @update:value="(v: number | null) => updateLiteral(String(v ?? ''))"
@@ -190,7 +192,7 @@ watchEffect(() => {
       <n-select
         :value="currentType"
         :options="typeOptions"
-        size="small"
+        :size="size"
         class="!w-[72px]"
         :disabled="disabled"
         @update:value="setType"
@@ -203,7 +205,7 @@ watchEffect(() => {
           <n-input-number
             :value="Number(modelValue.value)"
             placeholder="数字…"
-            size="small"
+            :size="size"
             :disabled="disabled"
             class="!w-[110px]"
             @update:value="(v: number) => updateLiteral(String(v ?? ''))"
@@ -214,7 +216,7 @@ watchEffect(() => {
           <n-input
             :value="modelValue.value"
             :placeholder="literalPlaceholder"
-            size="small"
+            :size="size"
             :disabled="disabled"
             class="!w-[120px]"
             @update:value="updateLiteral"
@@ -228,7 +230,7 @@ watchEffect(() => {
           :value="modelValue.path"
           :options="filteredFieldOptions"
           placeholder="选择字段…"
-          size="small"
+          :size="size"
           :disabled="disabled"
           class="!w-[160px]"
           clearable
@@ -244,7 +246,7 @@ watchEffect(() => {
           :value="modelValue.call.method"
           :options="filteredFunctionOptions"
           placeholder="方法…"
-          size="small"
+          :size="size"
           :disabled="disabled"
           class="!w-[130px]"
           @update:value="onMethodChange"

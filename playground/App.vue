@@ -2,6 +2,7 @@
 import { ref, provide, computed, type Ref } from 'vue'
 import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
+import type { ComponentSize } from '../src'
 
 const activeTab = ref('spel-editor')
 
@@ -11,6 +12,16 @@ provide<Ref<'light' | 'dark'>>('playgroundTheme', playgroundTheme)
 function toggleTheme() {
   playgroundTheme.value = playgroundTheme.value === 'dark' ? 'light' : 'dark'
 }
+
+const playgroundSize = ref<ComponentSize>('small')
+provide<Ref<ComponentSize>>('playgroundSize', playgroundSize)
+
+const sizeOptions: { label: string; value: ComponentSize }[] = [
+  { label: '极小', value: 'tiny' },
+  { label: '小', value: 'small' },
+  { label: '中', value: 'medium' },
+  { label: '大', value: 'large' },
+]
 
 const currentComponent = computed(() => {
   switch (activeTab.value) {
@@ -41,6 +52,13 @@ const currentComponent = computed(() => {
         </div>
 
         <div class="header-controls">
+          <!-- Size 下拉 -->
+          <div class="size-selector">
+            <span class="size-label">尺寸</span>
+            <select v-model="playgroundSize" class="size-select">
+              <option v-for="opt in sizeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
           <button class="theme-toggle" :title="playgroundTheme === 'dark' ? '切换到亮色' : '切换到暗色'" @click="toggleTheme">
             <span v-if="playgroundTheme === 'dark'" class="i-carbon-sun" />
             <span v-else class="i-carbon-moon" />
@@ -233,6 +251,39 @@ const currentComponent = computed(() => {
 
 .theme-text {
   letter-spacing: 0.025em;
+}
+
+/* ─── Size selector ───────────────────────────────────────────── */
+.size-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.size-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.025em;
+}
+
+.size-select {
+  padding: 0.375rem 0.625rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.size-select:hover,
+.size-select:focus {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 /* ─── Main content ──────────────────────────────────────────────── */

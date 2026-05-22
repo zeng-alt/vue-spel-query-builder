@@ -10,6 +10,7 @@ export type {
   RuleNode,
   ContextVariable,
   Comparator,
+  ComponentSize,
 } from './types'
 export { useSpelEditor, useRuleTree } from './composables'
 export {

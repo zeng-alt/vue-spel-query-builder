@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect, watch } from 'vue'
-import type { RuleNode, FieldOption, LogicalOperator, Expression, ListFilter } from '../../types'
+import type { RuleNode, FieldOption, LogicalOperator, Expression, ListFilter, ComponentSize } from '../../types'
 import ExpressionEditor from './ExpressionEditor.vue'
 import { formatExpression } from '../../utils'
 import { spelService } from '../../spel-service'
@@ -13,8 +13,10 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
   level?: number
   theme?: 'light' | 'dark'
+  size?: ComponentSize
 }>(), {
   theme: 'light',
+  size: 'small',
 })
 
 const emit = defineEmits<{
@@ -338,6 +340,7 @@ const listFilterLiteralValue = computed(() => {
     class="rounded-md border overflow-hidden transition-all duration-150"
     :class="[
       `theme--${props.theme}`,
+      `size--${size}`,
       isEditing ? 'is-editing' : 'is-idle',
       disabled ? 'opacity-60 pointer-events-none' : '',
     ]"
@@ -352,7 +355,7 @@ const listFilterLiteralValue = computed(() => {
         <span v-else-if="hasValueInput" class="text-[11px] tracking-widest text-placeholder">···</span>
       </template>
       <span v-else class="text-xs italic text-placeholder">点击配置条件…</span>
-      <n-button class="!ml-auto opacity-0 group-hover/row:opacity-100 transition-opacity duration-100 flex-shrink-0" text size="tiny" type="error" :disabled="disabled" @click.stop="handleRemove">
+      <n-button class="!ml-auto opacity-0 group-hover/row:opacity-100 transition-opacity duration-100 flex-shrink-0" text :size="size" type="error" :disabled="disabled" @click.stop="handleRemove">
         <template #icon><span class="i-carbon:close text-xs" /></template>
       </n-button>
     </div>
@@ -365,22 +368,22 @@ const listFilterLiteralValue = computed(() => {
           <div class="expr-block">
             <div class="expr-block__label">左侧</div>
             <div class="expr-block__body">
-              <ExpressionEditor :model-value="node.left ?? { type: 'field', path: '' }" :field-options="fieldOptions" :disabled="disabled" :allow-literal="false" @update:model-value="updateLeft" />
+              <ExpressionEditor :model-value="node.left ?? { type: 'field', path: '' }" :field-options="fieldOptions" :disabled="disabled" :allow-literal="false" :size="size" @update:model-value="updateLeft" />
             </div>
           </div>
           <!-- 操作符 -->
           <div class="expr-block">
             <div class="expr-block__label">操作符</div>
             <div class="expr-block__body">
-              <n-select :value="node.comparator" :options="availableComparators" placeholder="…" :disabled="disabled" size="small" class="!w-[108px]" @update:value="updateComparator" />
+              <n-select :value="node.comparator" :options="availableComparators" placeholder="…" :disabled="disabled" :size="size" class="!w-[108px]" @update:value="updateComparator" />
             </div>
           </div>
           <!-- 右侧表达式 -->
           <div v-if="hasValueInput" class="expr-block">
             <div class="expr-block__label">右侧</div>
             <div class="expr-block__body">
-              <ExpressionEditor v-if="isCountOperator" :model-value="node.right ?? { type: 'literal', value: '', literalType: 'number' }" :force-number-input="true" :disabled="disabled" @update:model-value="updateRight" />
-              <ExpressionEditor v-else :model-value="node.right ?? { type: 'literal', value: '', literalType: 'string' }" :field-options="fieldOptions" :disabled="disabled" :allow-literal="true" @update:model-value="updateRight" />
+              <ExpressionEditor v-if="isCountOperator" :model-value="node.right ?? { type: 'literal', value: '', literalType: 'number' }" :force-number-input="true" :disabled="disabled" :size="size" @update:model-value="updateRight" />
+              <ExpressionEditor v-else :model-value="node.right ?? { type: 'literal', value: '', literalType: 'string' }" :field-options="fieldOptions" :disabled="disabled" :allow-literal="true" :size="size" @update:model-value="updateRight" />
             </div>
           </div>
         </div>
@@ -397,7 +400,7 @@ const listFilterLiteralValue = computed(() => {
                   :value="node.listFilter?.comparator ?? ''"
                   :options="listFilterComparators"
                   placeholder="操作符"
-                  size="small"
+                  :size="size"
                   class="!w-[80px]"
                   :disabled="disabled"
                   @update:value="updateListFilterComparator"
@@ -406,7 +409,7 @@ const listFilterLiteralValue = computed(() => {
                   <n-input-number
                     v-if="listElementType === 'number'"
                     :value="listFilterLiteralValue !== '' ? Number(listFilterLiteralValue) : null"
-                    size="small"
+                    :size="size"
                     class="!w-[100px]"
                     :disabled="disabled"
                     @update:value="(v: number | null) => updateListFilterValue(v ?? 0)"
@@ -414,7 +417,7 @@ const listFilterLiteralValue = computed(() => {
                   <n-input
                     v-else
                     :value="listFilterLiteralValue"
-                    size="small"
+                    :size="size"
                     class="!w-[120px]"
                     :disabled="disabled"
                     placeholder="文本…"
@@ -429,7 +432,7 @@ const listFilterLiteralValue = computed(() => {
                   :value="node.listFilter?.fieldPath"
                   :options="currentArrayFieldOption?.elementChildren ?? []"
                   placeholder="选择字段"
-                  size="small"
+                  :size="size"
                   class="!w-[140px]"
                   :disabled="disabled"
                   check-strategy="child"
@@ -440,7 +443,7 @@ const listFilterLiteralValue = computed(() => {
                   :value="node.listFilter?.comparator ?? ''"
                   :options="listFilterComparators"
                   placeholder="操作符"
-                  size="small"
+                  :size="size"
                   class="!w-[80px]"
                   :disabled="disabled"
                   @update:value="updateListFilterComparator"
@@ -449,7 +452,7 @@ const listFilterLiteralValue = computed(() => {
                   <n-input-number
                     v-if="selectedElementFieldType === 'number'"
                     :value="listFilterLiteralValue !== '' ? Number(listFilterLiteralValue) : null"
-                    size="small"
+                    :size="size"
                     class="!w-[100px]"
                     :disabled="disabled"
                     @update:value="(v: number | null) => updateListFilterValue(v ?? 0)"
@@ -457,7 +460,7 @@ const listFilterLiteralValue = computed(() => {
                   <n-input
                     v-else
                     :value="listFilterLiteralValue"
-                    size="small"
+                    :size="size"
                     class="!w-[120px]"
                     :disabled="disabled"
                     placeholder="文本…"
@@ -483,7 +486,7 @@ const listFilterLiteralValue = computed(() => {
   </div>
 
   <!-- 分组节点 -->
-  <div v-else class="relative group-root" :class="[`theme--${props.theme}`, level > 0 ? 'ml-4' : '']">
+  <div v-else class="relative group-root" :class="[`theme--${props.theme}`, `size--${size}`, level > 0 ? 'ml-4' : '']">
     <div v-if="level > 0" class="group-connector" />
     <div class="flex items-center gap-2 mb-2">
       <div class="op-toggle">
@@ -496,11 +499,11 @@ const listFilterLiteralValue = computed(() => {
       </div>
       <div class="flex-1" />
       <div class="flex items-center gap-1">
-        <n-button class="action-btn" size="small" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-xs" /></template>条件</n-button>
-        <n-button class="action-btn" size="small" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-xs" /></template>分组</n-button>
+        <n-button class="action-btn" :size="size" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-xs" /></template>条件</n-button>
+        <n-button class="action-btn" :size="size" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-xs" /></template>分组</n-button>
         <template v-if="level > 0">
           <div class="w-px h-4 mx-0.5 divider" />
-          <n-button size="small" quaternary circle type="error" :disabled="disabled" @click="handleRemove"><template #icon><span class="i-carbon:trash-can text-sm" /></template></n-button>
+          <n-button :size="size" quaternary circle type="error" :disabled="disabled" @click="handleRemove"><template #icon><span class="i-carbon:trash-can text-sm" /></template></n-button>
         </template>
       </div>
     </div>
@@ -510,7 +513,7 @@ const listFilterLiteralValue = computed(() => {
         <template v-if="node.children && node.children.length > 0">
           <div v-for="child in node.children" :key="child.id" class="relative">
             <div class="group-hline" />
-            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1" :theme="props.theme"
+            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1" :theme="props.theme" :size="size"
               @add-condition="(id) => $emit('add-condition', id)" @add-group="(id) => $emit('add-group', id)"
               @remove-node="(id) => $emit('remove-node', id)" @update-node="(id, updates) => $emit('update-node', id, updates)" />
           </div>
@@ -738,4 +741,51 @@ const listFilterLiteralValue = computed(() => {
   opacity: 0.5 !important;
   box-shadow: none !important;
 }
+
+/* ─── Size variants ───────────────────────────────────────────── */
+/* tiny */
+.size--tiny .group\/row { min-height: 28px; padding-left: 6px; padding-right: 6px; }
+.size--tiny .edit-panel { padding: 6px 8px; }
+.size--tiny .expr-block__body { padding: 3px 6px; min-height: 28px; }
+.size--tiny .expr-block__label { font-size: 9px; }
+.size--tiny .expr-chip { padding: 0 4px; font-size: 10px !important; }
+.size--tiny .op-toggle__btn { padding: 0 8px; height: 22px; font-size: 11px; }
+.size--tiny .action-btn { font-size: 11px !important; }
+.size--tiny .preview-block { padding: 4px 6px; }
+.size--tiny .preview-code { font-size: 10px !important; }
+.size--tiny .empty-state { padding: 12px 0; }
+.size--tiny .empty-state p { font-size: 10px; }
+
+/* small (default) */
+.size--small .group\/row { min-height: 34px; padding-left: 10px; padding-right: 10px; }
+.size--small .edit-panel { padding: 12px; }
+.size--small .expr-block__body { padding: 5px 8px; min-height: 36px; }
+.size--small .expr-block__label { font-size: 10px; }
+.size--small .expr-chip { padding: 1px 6px; font-size: 11px !important; }
+.size--small .op-toggle__btn { padding: 0 12px; height: 26px; font-size: 12px; }
+.size--small .preview-block { padding: 6px 8px; }
+.size--small .preview-code { font-size: 11px !important; }
+.size--small .empty-state { padding: 24px 0; }
+
+/* medium */
+.size--medium .group\/row { min-height: 40px; padding-left: 14px; padding-right: 14px; }
+.size--medium .edit-panel { padding: 16px; }
+.size--medium .expr-block__body { padding: 8px 12px; min-height: 44px; }
+.size--medium .expr-block__label { font-size: 11px; }
+.size--medium .expr-chip { padding: 2px 8px; font-size: 12px !important; }
+.size--medium .op-toggle__btn { padding: 0 16px; height: 30px; font-size: 13px; }
+.size--medium .preview-block { padding: 8px 12px; }
+.size--medium .preview-code { font-size: 12px !important; }
+.size--medium .empty-state { padding: 32px 0; }
+
+/* large */
+.size--large .group\/row { min-height: 48px; padding-left: 18px; padding-right: 18px; }
+.size--large .edit-panel { padding: 20px; }
+.size--large .expr-block__body { padding: 10px 16px; min-height: 52px; }
+.size--large .expr-block__label { font-size: 12px; }
+.size--large .expr-chip { padding: 3px 10px; font-size: 13px !important; }
+.size--large .op-toggle__btn { padding: 0 20px; height: 34px; font-size: 14px; }
+.size--large .preview-block { padding: 10px 16px; }
+.size--large .preview-code { font-size: 13px !important; }
+.size--large .empty-state { padding: 40px 0; }
 </style>

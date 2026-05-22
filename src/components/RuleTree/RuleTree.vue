@@ -8,6 +8,7 @@ import { darkTheme, lightTheme } from 'naive-ui'
 
 const props = withDefaults(defineProps<RuleTreeProps>(), {
   theme: 'light',
+  size: 'small',
 })
 const emit = defineEmits<RuleTreeEmits>()
 
@@ -24,7 +25,7 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
 
 <template>
   <NConfigProvider :theme="currentTheme">
-    <div class="rule-tree-container" :class="`theme--${props.theme}`">
+    <div class="rule-tree-container" :class="[`theme--${props.theme}`, `size--${props.size}`]">
       <RuleTreeNode
         :node="modelValue"
         :authentication="authentication"
@@ -33,6 +34,7 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
         :disabled="disabled"
         :level="0"
         :theme="props.theme"
+        :size="props.size"
         @add-condition="addCondition"
         @add-group="addGroup"
         @remove-node="removeNode"
@@ -178,4 +180,10 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
 
   --divider-bg: #3e3e5c;
 }
+
+/* ─── Size variants ────────────────────────────────────────────── */
+.rule-tree-container.size--tiny { padding: 8px; }
+.rule-tree-container.size--small { padding: 12px; }
+.rule-tree-container.size--medium { padding: 20px; }
+.rule-tree-container.size--large { padding: 28px; }
 </style>

@@ -5,6 +5,7 @@ import type { RuleTreeInstance, RuleNode } from '../src'
 import { createEmptyGroup } from '../src'
 
 const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
+const playgroundSize = inject<import('vue').Ref<import('../src').ComponentSize>>('playgroundSize')!
 
 const ruleTreeRef = ref<RuleTreeInstance>()
 
@@ -146,6 +147,7 @@ const handleChange = (rule) => {
               :locals="context"
               :disabled="disabled"
               :theme="playgroundTheme"
+              :size="playgroundSize"
             />
           </div>
         </div>

@@ -1,3 +1,5 @@
+export type ComponentSize = 'tiny' | 'small' | 'medium' | 'large'
+
 export interface SpelEditorProps {
   modelValue: string
   authentication?: Record<string, any>
@@ -7,6 +9,7 @@ export interface SpelEditorProps {
   readonly?: boolean
   height?: string | number
   theme?: 'dark' | 'light'
+  size?: ComponentSize
 }
 
 export interface SpelEditorEmits {
@@ -103,6 +106,7 @@ export interface RuleTreeProps {
   locals?: Record<string, any>
   disabled?: boolean
   theme?: 'light' | 'dark'
+  size?: ComponentSize
 }
 
 export interface RuleTreeEmits {
