@@ -35,12 +35,12 @@ class SpelService {
   }
 
   eval(expression: string, locals?: Record<string, any>) {
-    // 合并自定义方法到 locals，确保 spel2js 能正确调用
-    let mergedLocals = locals
+    // 合并自定义方法到 context，确保 spel2js 能正确调用
+    let mergedContext = this.getContext()
     if (this.methods) {
-      mergedLocals = { ...(locals ?? {}), ...this.methods }
+      mergedContext = { ...this.getContext(), ...this.methods }
     }
-    return SpelExpressionEvaluator.eval(expression, this.getContext(), mergedLocals)
+    return SpelExpressionEvaluator.eval(expression, mergedContext, locals)
   }
 }
 

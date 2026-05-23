@@ -55,7 +55,7 @@ function fieldO(r: ElementField, pfx: string, part: string) {
 }
 
 function filterCtx(ap: string, inside: string, pos: number) {
-  const meta = buildArrayMeta(A(), B(), L(), M())[ap]; if (!meta) return null
+  const meta = buildArrayMeta(A(), B(), L())[ap]; if (!meta) return null
   const di = inside.lastIndexOf('.')
   if (di >= 0) {
     const pfx = inside.slice(0, di); const part = inside.slice(di + 1)
