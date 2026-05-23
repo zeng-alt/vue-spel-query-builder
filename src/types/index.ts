@@ -1,10 +1,17 @@
 export type ComponentSize = 'tiny' | 'small' | 'medium' | 'large'
 
+export interface CustomMethod {
+  name: string
+  argumentCount: number
+  description?: string
+}
+
 export interface SpelEditorProps {
   modelValue: string
   authentication?: Record<string, any>
   principal?: Record<string, any>
   locals?: Record<string, any>
+  methods?: CustomMethod[]
   disabled?: boolean
   readonly?: boolean
   height?: string | number
@@ -104,6 +111,7 @@ export interface RuleTreeProps {
   authentication?: Record<string, any>
   principal?: Record<string, any>
   locals?: Record<string, any>
+  methods?: CustomMethod[]
   disabled?: boolean
   theme?: 'light' | 'dark'
   size?: ComponentSize

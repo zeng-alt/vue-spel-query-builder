@@ -36,7 +36,7 @@ const cStyle = computed(() => {
   return { minHeight: '200px' }
 })
 
-const A = () => props.authentication, B = () => props.principal, L = () => props.locals
+const A = () => props.authentication, B = () => props.principal, L = () => props.locals, M = () => props.methods
 const toO = (e: SpelEntry[], p: string) => {
   const l = p.toLowerCase()
   return e.filter(x => x.label.toLowerCase().startsWith(l)).map(x => ({ label:x.label, type:x.type, detail:x.detail }))
@@ -55,7 +55,7 @@ function fieldO(r: ElementField, pfx: string, part: string) {
 }
 
 function filterCtx(ap: string, inside: string, pos: number) {
-  const meta = buildArrayMeta(A(), B(), L())[ap]; if (!meta) return null
+  const meta = buildArrayMeta(A(), B(), L(), M())[ap]; if (!meta) return null
   const di = inside.lastIndexOf('.')
   if (di >= 0) {
     const pfx = inside.slice(0, di); const part = inside.slice(di + 1)
@@ -96,12 +96,12 @@ const extensions = computed(() => {
       if (type === 'array') { const am = buildArrayMeta(A(), B(), L())[base]; return { from: word.from + di + 1, options: toO(buildArrayMethodEntries(am), part) } }
     }
     const lower = text.toLowerCase()
-    return { from: word.from, options: buildEntries(A(), B(), L()).filter(e => e.label.toLowerCase().startsWith(lower)).map(e => ({ label:e.label, type:e.type, detail:e.detail, apply:(v:EditorView) => v.dispatch({ changes: { from: word.from, to: word.to, insert: e.label } }) })) }
+    return { from: word.from, options: buildEntries(A(), B(), L(), M()).filter(e => e.label.toLowerCase().startsWith(lower)).map(e => ({ label:e.label, type:e.type, detail:e.detail, apply:(v:EditorView) => v.dispatch({ changes: { from: word.from, to: word.to, insert: e.label } }) })) }
   }
 
   const tooltip = hoverTooltip((view, pos) => {
     const token = getTokenAt(view.state.doc, pos); if (!token) return null
-    const entry = buildEntries(A(), B(), L()).find(e => e.label === token.text); if (!entry) return null
+    const entry = buildEntries(A(), B(), L(), M()).find(e => e.label === token.text); if (!entry) return null
     return { pos: token.from, end: token.to, above: true, create: () => ({ dom: buildHoverTooltipDom(entry, T.value) }) }
   }, { hoverTime: 300 })
 

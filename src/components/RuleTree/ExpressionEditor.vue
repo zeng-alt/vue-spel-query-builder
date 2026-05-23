@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
-import type { Expression, FunctionCall, FunctionDef, FieldOption, ComponentSize } from '../../types'
+import type { Expression, FunctionCall, FunctionDef, FieldOption, ComponentSize, CustomMethod } from '../../types'
 
 // ─── 扩展的函数定义（增加 returnType） ────────────────────────
 
@@ -27,12 +27,21 @@ const FUNCTIONS: FunctionDef[] = [
   { label: 'currentUser()', value: 'currentUser()', argumentCount: 0, hasBase: false, returnType: 'string' },
 ]
 
-const fullFunctionOptions = FUNCTIONS.map(f => ({ label: f.label, value: f.value }))
+const fullFunctionOptions = computed(() => {
+  const builtin = FUNCTIONS.map(f => ({ label: f.label, value: f.value }))
+  if (!props.methods) return builtin
+  const custom = props.methods.map(m => {
+    const args = Array.from({ length: m.argumentCount }, (_, i) => `arg${i + 1}`).join(', ')
+    return { label: `${m.name}(${args})`, value: m.name }
+  })
+  return [...builtin, ...custom]
+})
 
 // ─── Props ─────────────────────────────────────────────────────
 const props = withDefaults(defineProps<{
   modelValue?: Expression
   fieldOptions?: FieldOption[]
+  methods?: CustomMethod[]
   disabled?: boolean
   allowLiteral?: boolean
   allowFunction?: boolean
@@ -90,10 +99,15 @@ const filteredFieldOptions = computed<FieldOption[]>(() => {
 
 // ─── 函数过滤（根据 baseTypeFilter 限制函数列表） ─────────────
 const filteredFunctionOptions = computed(() => {
-  if (!props.baseTypeFilter) return fullFunctionOptions
-  return FUNCTIONS
+  if (!props.baseTypeFilter) return fullFunctionOptions.value
+  const builtin = FUNCTIONS
     .filter(f => f.returnType === props.baseTypeFilter)
     .map(f => ({ label: f.label, value: f.value }))
+  if (!props.methods) return builtin
+  const custom = props.methods
+    .filter(m => !props.baseTypeFilter) // custom methods have no returnType filter
+    .map(m => ({ label: `${m.name}(...)`, value: m.name }))
+  return [...builtin, ...custom]
 })
 
 // ─── 更新方法 ──────────────────────────────────────────────────
@@ -128,9 +142,11 @@ function updateCall(partial: Partial<FunctionCall>) {
 
 function onMethodChange(method: string) {
   const def = FUNCTIONS.find(f => f.value === method)
-  if (!def) return
+  const customDef = !def ? props.methods?.find(m => m.name === method) : null
+  const argCount = def?.argumentCount ?? customDef?.argumentCount ?? 0
+  const hasBase = def?.hasBase ?? false
 
-  const args: Expression[] = Array.from({ length: def.argumentCount }, () => ({
+  const args: Expression[] = Array.from({ length: argCount }, () => ({
     type: 'literal' as const,
     value: '',
   }))
@@ -139,7 +155,7 @@ function onMethodChange(method: string) {
     type: 'function',
     call: {
       method,
-      base: def.hasBase ? { type: 'field', path: '' } : undefined,
+      base: hasBase ? { type: 'field', path: '' } : undefined,
       args,
     },
   })

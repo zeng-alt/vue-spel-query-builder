@@ -1,9 +1,11 @@
 import type { SpelEntry, ArrayMeta, ElementField } from './spel-types'
+import type { CustomMethod } from '../../types'
 
 export function buildEntries(
   authentication?: Record<string, any>,
   principal?: Record<string, any>,
   locals?: Record<string, any>,
+  methods?: CustomMethod[],
 ): SpelEntry[] {
   const list: SpelEntry[] = []
   if (authentication) {
@@ -130,6 +132,18 @@ export function buildEntries(
       extra: 'principal.name.length() > 2',
     },
   ].forEach((f) => list.push({ ...f, type: 'function' as const }))
+  if (methods) {
+    for (const m of methods) {
+      const args = Array.from({ length: m.argumentCount }, (_, i) => `arg${i + 1}`).join(', ')
+      list.push({
+        label: `${m.name}(${args})`,
+        type: 'function' as const,
+        detail: '自定义方法',
+        desc: m.description ?? '',
+        extra: `${m.name}(${args})`,
+      })
+    }
+  }
   return list
 }
 

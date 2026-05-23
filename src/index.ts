@@ -8,6 +8,7 @@ export type {
   RuleTreeEmits,
   RuleTreeInstance,
   RuleNode,
+  CustomMethod,
   ContextVariable,
   Comparator,
   ComponentSize,

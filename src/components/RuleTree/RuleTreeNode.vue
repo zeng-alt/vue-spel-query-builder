@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<{
   authentication?: Record<string, any>
   principal?: Record<string, any>
   locals?: Record<string, any>
+  methods?: import('../../types').CustomMethod[]
   disabled?: boolean
   level?: number
   theme?: 'light' | 'dark'
@@ -371,7 +372,7 @@ const listFilterLiteralValue = computed(() => {
           <div class="expr-block">
             <div class="expr-block__label">左侧</div>
             <div class="expr-block__body">
-              <ExpressionEditor :model-value="node.left ?? { type: 'field', path: '' }" :field-options="fieldOptions" :disabled="disabled" :allow-literal="false" :size="size" @update:model-value="updateLeft" />
+              <ExpressionEditor :model-value="node.left ?? { type: 'field', path: '' }" :field-options="fieldOptions" :methods="methods" :disabled="disabled" :allow-literal="false" :size="size" @update:model-value="updateLeft" />
             </div>
           </div>
           <!-- 操作符 -->
@@ -386,7 +387,7 @@ const listFilterLiteralValue = computed(() => {
             <div class="expr-block__label">右侧</div>
             <div class="expr-block__body">
               <ExpressionEditor v-if="isCountOperator" :model-value="node.right ?? { type: 'literal', value: '', literalType: 'number' }" :force-number-input="true" :disabled="disabled" :size="size" @update:model-value="updateRight" />
-              <ExpressionEditor v-else :model-value="node.right ?? { type: 'literal', value: '', literalType: 'string' }" :field-options="fieldOptions" :disabled="disabled" :allow-literal="true" :size="size" @update:model-value="updateRight" />
+              <ExpressionEditor v-else :model-value="node.right ?? { type: 'literal', value: '', literalType: 'string' }" :field-options="fieldOptions" :methods="methods" :disabled="disabled" :allow-literal="true" :size="size" @update:model-value="updateRight" />
             </div>
           </div>
         </div>
@@ -516,7 +517,7 @@ const listFilterLiteralValue = computed(() => {
         <template v-if="node.children && node.children.length > 0">
           <div v-for="child in node.children" :key="child.id" class="relative">
             <div class="group-hline" />
-            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :disabled="disabled" :level="level + 1" :theme="props.theme" :size="size"
+            <RuleTreeNode :node="child" :authentication="authentication" :principal="principal" :locals="locals" :methods="methods" :disabled="disabled" :level="level + 1" :theme="props.theme" :size="size"
               @add-condition="(id) => $emit('add-condition', id)" @add-group="(id) => $emit('add-group', id)"
               @remove-node="(id) => $emit('remove-node', id)" @update-node="(id, updates) => $emit('update-node', id, updates)" />
           </div>

@@ -31,6 +31,7 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
         :authentication="authentication"
         :principal="principal"
         :locals="locals"
+        :methods="methods"
         :disabled="disabled"
         :level="0"
         :theme="props.theme"
