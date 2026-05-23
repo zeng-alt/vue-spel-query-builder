@@ -134,13 +134,16 @@ export function buildEntries(
   ].forEach((f) => list.push({ ...f, type: 'function' as const }))
   if (methods) {
     for (const m of methods) {
-      const args = Array.from({ length: m.argumentCount }, (_, i) => `arg${i + 1}`).join(', ')
+      const args = m.params
+        ? m.params.map(p => `${p.name}: ${p.type}`).join(', ')
+        : Array.from({ length: m.argumentCount }, (_, i) => `arg${i + 1}`).join(', ')
+      const retType = m.returnType ? `: ${m.returnType}` : ''
       list.push({
-        label: `${m.name}(${args})`,
+        label: `${m.name}(${args})${retType}`,
         type: 'function' as const,
-        detail: '自定义方法',
+        detail: `自定义方法${retType}`,
         desc: m.description ?? '',
-        extra: `${m.name}(${args})`,
+        extra: `${m.name}(${args})${retType}`,
       })
     }
   }

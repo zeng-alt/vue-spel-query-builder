@@ -9,6 +9,7 @@ export type {
   RuleTreeInstance,
   RuleNode,
   CustomMethod,
+  CustomMethodParam,
   ContextVariable,
   Comparator,
   ComponentSize,

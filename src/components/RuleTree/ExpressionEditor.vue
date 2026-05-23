@@ -31,8 +31,11 @@ const fullFunctionOptions = computed(() => {
   const builtin = FUNCTIONS.map(f => ({ label: f.label, value: f.value }))
   if (!props.methods) return builtin
   const custom = props.methods.map(m => {
-    const args = Array.from({ length: m.argumentCount }, (_, i) => `arg${i + 1}`).join(', ')
-    return { label: `${m.name}(${args})`, value: m.name }
+    const args = m.params
+      ? m.params.map(p => `${p.name}: ${p.type}`).join(', ')
+      : Array.from({ length: m.argumentCount }, (_, i) => `arg${i + 1}`).join(', ')
+    const retType = m.returnType ? `: ${m.returnType}` : ''
+    return { label: `${m.name}(${args})${retType}`, value: m.name }
   })
   return [...builtin, ...custom]
 })

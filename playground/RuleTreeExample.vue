@@ -75,8 +75,20 @@ watch(localsText, (val) => {
 })
 
 const customMethods: CustomMethod[] = [
-  { name: 'isEmpty', argumentCount: 1, description: '判断字符串或数组是否为空' },
-  { name: 'calculate', argumentCount: 2, description: '执行自定义计算' },
+  {
+    name: 'isEmpty',
+    argumentCount: 1,
+    params: [{ name: 'value', type: 'any' }],
+    returnType: 'boolean',
+    description: '判断字符串或数组是否为空',
+  },
+  {
+    name: 'calculate',
+    argumentCount: 2,
+    params: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    returnType: 'number',
+    description: '执行自定义计算',
+  },
 ]
 
 const disabled = ref(false)

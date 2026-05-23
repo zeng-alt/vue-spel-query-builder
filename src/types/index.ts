@@ -1,8 +1,15 @@
 export type ComponentSize = 'tiny' | 'small' | 'medium' | 'large'
 
+export interface CustomMethodParam {
+  name: string
+  type: string
+}
+
 export interface CustomMethod {
   name: string
   argumentCount: number
+  params?: CustomMethodParam[]
+  returnType?: string
   description?: string
 }
 
