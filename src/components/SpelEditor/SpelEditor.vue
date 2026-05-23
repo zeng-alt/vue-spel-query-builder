@@ -77,33 +77,36 @@ function filterCtx(ap: string, inside: string, pos: number) {
 }
 
 
-const completionSource: import('@codemirror/autocomplete').CompletionSource = (ctx) => {
-  const word = ctx.matchBefore(/[#a-zA-Z_][\w#.]*/)
-  const pos = ctx.pos
-  const before = ctx.state.sliceDoc(Math.max(0, pos - 200), pos)
-  const lm = before.match(/('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\.([\w]*)$/)
-  if (lm) return { from: pos - (lm[2]?.length ?? 0), options: toO(buildStringMethodEntries(), lm[2] ?? '') }
-  const fm = before.match(/(\w+(?:\.\w+)*)\.([?!])[[]([^[\]]*)$/)
-  if (fm) { const r = filterCtx(fm[1]!, fm[3]!, pos); if (r) return r }
-  if (!word || (word.from === word.to && !ctx.explicit)) return null
-  const text = word.text; const di = text.lastIndexOf('.')
-  if (di > 0) {
-    const base = text.slice(0, di); const part = text.slice(di + 1)
-    const type = buildTypeMap(A(), B(), L())[base]
-    if (type === 'string') return { from: word.from + di + 1, options: toO(buildStringMethodEntries(), part) }
-    if (type === 'array') { const am = buildArrayMeta(A(), B(), L())[base]; return { from: word.from + di + 1, options: toO(buildArrayMethodEntries(am), part) } }
+const extensions = computed(() => {
+  // 每次上下文变化时重新构建 completionSource，确保增删属性后提示实时更新
+  const source: import('@codemirror/autocomplete').CompletionSource = (ctx) => {
+    const word = ctx.matchBefore(/[#a-zA-Z_][\w#.]*/)
+    const pos = ctx.pos
+    const before = ctx.state.sliceDoc(Math.max(0, pos - 200), pos)
+    const lm = before.match(/('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\.([\w]*)$/)
+    if (lm) return { from: pos - (lm[2]?.length ?? 0), options: toO(buildStringMethodEntries(), lm[2] ?? '') }
+    const fm = before.match(/(\w+(?:\.\w+)*)\.([?!])[[]([^[\]]*)$/)
+    if (fm) { const r = filterCtx(fm[1]!, fm[3]!, pos); if (r) return r }
+    if (!word || (word.from === word.to && !ctx.explicit)) return null
+    const text = word.text; const di = text.lastIndexOf('.')
+    if (di > 0) {
+      const base = text.slice(0, di); const part = text.slice(di + 1)
+      const type = buildTypeMap(A(), B(), L())[base]
+      if (type === 'string') return { from: word.from + di + 1, options: toO(buildStringMethodEntries(), part) }
+      if (type === 'array') { const am = buildArrayMeta(A(), B(), L())[base]; return { from: word.from + di + 1, options: toO(buildArrayMethodEntries(am), part) } }
+    }
+    const lower = text.toLowerCase()
+    return { from: word.from, options: buildEntries(A(), B(), L()).filter(e => e.label.toLowerCase().startsWith(lower)).map(e => ({ label:e.label, type:e.type, detail:e.detail, apply:(v:EditorView) => v.dispatch({ changes: { from: word.from, to: word.to, insert: e.label } }) })) }
   }
-  const lower = text.toLowerCase()
-  return { from: word.from, options: buildEntries(A(), B(), L()).filter(e => e.label.toLowerCase().startsWith(lower)).map(e => ({ label:e.label, type:e.type, detail:e.detail, apply:(v:EditorView) => v.dispatch({ changes: { from: word.from, to: word.to, insert: e.label } }) })) }
-}
 
-const spelHoverTooltip = computed(() => hoverTooltip((view, pos) => {
-  const token = getTokenAt(view.state.doc, pos); if (!token) return null
-  const entry = buildEntries(A(), B(), L()).find(e => e.label === token.text); if (!entry) return null
-  return { pos: token.from, end: token.to, above: true, create: () => ({ dom: buildHoverTooltipDom(entry, T.value) }) }
-}, { hoverTime: 300 }))
+  const tooltip = hoverTooltip((view, pos) => {
+    const token = getTokenAt(view.state.doc, pos); if (!token) return null
+    const entry = buildEntries(A(), B(), L()).find(e => e.label === token.text); if (!entry) return null
+    return { pos: token.from, end: token.to, above: true, create: () => ({ dom: buildHoverTooltipDom(entry, T.value) }) }
+  }, { hoverTime: 300 })
 
-const extensions = computed(() => buildExtensions(T.value, isDark.value, editorFontSize.value, completionSource, spelHoverTooltip.value))
+  return buildExtensions(T.value, isDark.value, editorFontSize.value, source, tooltip)
+})
 
 watch(() => props.modelValue, (nv) => {
   if (!cmRef.value?.view) return
