@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, inject } from 'vue'
 import { SpelEditor } from '../src'
-import type { SpelEditorInstance } from '../src'
+import type { SpelEditorInstance, CustomMethod } from '../src'
 
 const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
 const playgroundSize = inject<import('vue').Ref<import('../src').ComponentSize>>('playgroundSize')!
@@ -60,6 +60,11 @@ const locals = reactive({
 })
 
 const localsText = ref(JSON.stringify(locals, null, 2))
+
+const customMethods: CustomMethod[] = [
+  { name: 'isEmpty', argumentCount: 1, description: '判断字符串或数组是否为空' },
+  { name: 'calculate', argumentCount: 2, description: '执行自定义计算' },
+]
 
 watch(localsText, (val) => {
   try {
@@ -156,6 +161,7 @@ const formatResult = (result: any): string => {
           :authentication="authentication"
           :principal="principal"
           :locals="locals"
+          :methods="customMethods"
           :height="280"
           :theme="playgroundTheme"
           :size="playgroundSize"

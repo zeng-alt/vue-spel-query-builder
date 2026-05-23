@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, inject } from 'vue'
 import { RuleTree } from '../src'
-import type { RuleTreeInstance, RuleNode } from '../src'
+import type { RuleTreeInstance, RuleNode, CustomMethod } from '../src'
 import { createEmptyGroup } from '../src'
 
 const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
@@ -73,6 +73,11 @@ watch(localsText, (val) => {
   } catch {
   }
 })
+
+const customMethods: CustomMethod[] = [
+  { name: 'isEmpty', argumentCount: 1, description: '判断字符串或数组是否为空' },
+  { name: 'calculate', argumentCount: 2, description: '执行自定义计算' },
+]
 
 const disabled = ref(false)
 
@@ -196,6 +201,7 @@ const handleChange = (rule) => {
               :authentication="authentication"
               :principal="principal"
               :locals="locals"
+              :methods="customMethods"
               :disabled="disabled"
               :theme="playgroundTheme"
               :size="playgroundSize"

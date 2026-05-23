@@ -151,6 +151,7 @@ export function buildTypeMap(
   authentication?: Record<string, any>,
   principal?: Record<string, any>,
   locals?: Record<string, any>,
+  _methods?: CustomMethod[],
 ): Record<string, string> {
   const map: Record<string, string> = {}
   function walk(obj: any, prefix: string) {
