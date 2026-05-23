@@ -97,7 +97,6 @@ export interface RuleNode {
   right?: Expression
 
   listFilter?: ListFilter // 列表筛选条件
-  listProjection?: Expression // 列表投影: field.![expr]
 }
 
 export interface RuleTreeProps {

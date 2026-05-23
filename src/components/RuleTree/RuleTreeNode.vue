@@ -210,24 +210,10 @@ watch(() => {
   const left = props.node.left
   return left?.type === 'field' ? left.path : null
 }, (newPath, oldPath) => {
-  if (oldPath && newPath !== oldPath) {
-    if (props.node.listFilter) handleUpdate({ listFilter: undefined })
-    if (props.node.listProjection) handleUpdate({ listProjection: undefined })
+  if (oldPath && newPath !== oldPath && props.node.listFilter) {
+    handleUpdate({ listFilter: undefined })
   }
 })
-
-// ─── 列表投影相关 ─────────────────────────────────────────
-// 是否显示列表投影模式（对象数组 + == / != 时使用投影而非过滤）
-const showProjection = computed(() => {
-  if (leftType.value !== 'array') return false
-  if (listElementType.value !== 'object') return false
-  const comp = props.node.comparator
-  return comp === '==' || comp === '!='
-})
-
-function updateProjection(expr: Expression) {
-  handleUpdate({ listProjection: expr })
-}
 
 function updateListFilter(partial: Partial<ListFilter>) {
   const current = props.node.listFilter || { comparator: '' }
@@ -276,10 +262,6 @@ const isConfigured = computed(() => {
 const summaryExpression = computed(() => {
   if (props.node.type !== 'condition') return { left: '', op: '', right: '' }
   let leftStr = formatExpression(props.node.left)
-  // 列表投影预览
-  if (props.node.listProjection) {
-    leftStr = `${leftStr}.![${formatExpression(props.node.listProjection)}]`
-  }
   // 列表过滤预览
   if (props.node.listFilter && props.node.listFilter.comparator) {
     const { comparator, fieldPath, value } = props.node.listFilter
@@ -412,21 +394,10 @@ const listFilterLiteralValue = computed(() => {
         <!-- 列表区块（仅当左侧为数组时显示）：对象数组 + ==/!= 显示投影，否则显示过滤 -->
         <div v-if="leftType === 'array'" class="flex items-start gap-2 flex-wrap">
           <div class="expr-block">
-            <div class="expr-block__label">{{ showProjection ? '列表投影' : '列表过滤' }}</div>
+            <div class="expr-block__label">列表过滤</div>
             <div class="expr-block__body">
-              <!-- 投影模式：对象数组 + ==/!= 时，选择投影字段/函数 -->
-              <template v-if="showProjection">
-                <ExpressionEditor
-                  :model-value="node.listProjection ?? { type: 'field', path: '' }"
-                  :field-options="currentArrayFieldOption?.elementChildren ?? []"
-                  :allow-literal="false"
-                  :disabled="disabled"
-                  :size="size"
-                  @update:model-value="updateProjection"
-                />
-              </template>
-              <!-- 基本类型数组：直接 #this 过滤 -->
-              <template v-else-if="listElementType !== 'object'">
+              <!-- 基本类型：直接 #this -->
+              <template v-if="listElementType !== 'object'">
                 <span class="text-xs mr-1 text-secondary">#this</span>
                 <n-select
                   :value="node.listFilter?.comparator ?? ''"
