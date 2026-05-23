@@ -33,7 +33,9 @@ export function evalSpelExpression(expression: string, locals: Record<string, an
  */
 export function ruleNodeToSpel(node: RuleNode): string {
   if (node.type === 'condition') {
-    if (!node.left || !node.comparator) return ''
+    if (!node.left) return ''
+    // 纯列表过滤条件可以没有独立 comparator
+    if (!node.comparator && !node.listFilter) return ''
 
     let leftExpr = formatExpression(node.left)
 
@@ -62,10 +64,12 @@ export function ruleNodeToSpel(node: RuleNode): string {
           break
         }
       }
+      // 列表过滤已完整表达条件（无独立 right），直接返回
+      if (!node.right) return leftExpr
     }
 
     // 2. 数组 count 操作符需要追加 .size()
-    if (node.comparator.startsWith('count ')) {
+    if (node.comparator?.startsWith('count ')) {
       leftExpr = `${leftExpr}.size()`
       const rightExpr = node.right ? formatExpression(node.right) : ''
       const op = node.comparator.replace('count ', '')
@@ -95,18 +99,6 @@ export function ruleNodeToSpel(node: RuleNode): string {
         return `${leftExpr} == null`
       case 'isNotNull':
         return `${leftExpr} != null`
-      case 'count ==':
-        return `${leftExpr}.size() == ${rightExpr}`
-      case 'count !=':
-        return `${leftExpr}.size() != ${rightExpr}`
-      case 'count <':
-        return `${leftExpr}.size() < ${rightExpr}`
-      case 'count <=':
-        return `${leftExpr}.size() <= ${rightExpr}`
-      case 'count >':
-        return `${leftExpr}.size() > ${rightExpr}`
-      case 'count >=':
-        return `${leftExpr}.size() >= ${rightExpr}`
       default:
         return `${leftExpr} ${node.comparator} ${rightExpr}`
     }
