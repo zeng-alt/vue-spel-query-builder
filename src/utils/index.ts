@@ -327,6 +327,22 @@ function tryParseListFilter(
 }
 
 /**
+ * 解析单个值表达式（字面量或字段引用）
+ */
+function parseExpressionValue(str: string): Expression | null {
+  str = str.trim()
+  if (!str) return null
+
+  if (str.startsWith("'") && str.endsWith("'"))
+    return { type: 'literal', value: str.slice(1, -1) }
+  if (/^-?\d+(\.\d+)?$/.test(str))
+    return { type: 'literal', value: str, literalType: 'number' }
+  if (str === 'true' || str === 'false')
+    return { type: 'literal', value: str }
+  return { type: 'field', path: str }
+}
+
+/**
  * 尝试解析 count 操作:  expr.size() op value
  */
 function tryParseCountOperator(
