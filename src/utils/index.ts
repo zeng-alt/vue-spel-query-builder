@@ -69,6 +69,11 @@ export function ruleNodeToSpel(node: RuleNode): string {
       if (!node.right && node.comparator === '==') return leftExpr
     }
 
+    // 1b. 应用列表投影:  field.![expr]
+    if (node.listProjection) {
+      leftExpr = `${leftExpr}.![${formatExpression(node.listProjection)}]`
+    }
+
     // 2. 数组 count 操作符需要追加 .size()
     if (node.comparator?.startsWith('count ')) {
       leftExpr = `${leftExpr}.size()`
@@ -346,6 +351,26 @@ function tryParseListFilter(
     return {
       base,
       listFilter: { comparator: thisCond[1], value: val || undefined },
+/**
+ * 尝试解析列表投影模式:  field.![expr]
+ */
+function tryParseListProjection(
+  expr: string,
+): { base: string; projection: Expression } | null {
+  const t = expr.trim()
+  const projMatch = t.match(/^(.+?)\.!\[(.+)\]$/)
+  if (!projMatch) return null
+
+  const base = projMatch[1].trim()
+  const inner = projMatch[2].trim()
+
+  // 解析投影表达式（字段、函数等）
+  const projection = parseExpressionValue(inner)
+  if (!projection) return null
+
+  return { base, projection }
+}
+
     }
   }
 
@@ -444,6 +469,18 @@ function parseCondition(expr: string): RuleNode {
     }
   }
 
+  // 2b. 尝试列表投影:  field.![expr]
+  const projResult = tryParseListProjection(t)
+  if (projResult) {
+    return {
+      id: generateId(),
+      type: 'condition',
+      left: parseExpressionValue(projResult.base) ?? { type: 'field', path: projResult.base },
+      comparator: '==',
+      listProjection: projResult.projection,
+    }
+  }
+
   // 3. 尝试 count 操作 (含列表过滤组合: #user.roles.?[code == 'admin'].size() == 1)
   const countResult = tryParseCountOperator(t)
   if (countResult) {
@@ -475,6 +512,18 @@ function parseCondition(expr: string): RuleNode {
     if (idx !== -1) {
       const leftStr = t.substring(0, idx).trim()
       const rightStr = t.substring(idx + op.length).trim()
+      // 检测左值是否包含列表投影:  field.![expr] == value
+      const projParts = tryParseListProjection(leftStr)
+      if (projParts) {
+        return {
+          id: generateId(),
+          type: 'condition',
+          left: parseExpressionValue(projParts.base) ?? { type: 'field', path: projParts.base },
+          comparator: op,
+          right: parseExpressionValue(rightStr) ?? { type: 'field', path: rightStr },
+          listProjection: projParts.projection,
+        }
+      }
       const left = parseExpressionValue(leftStr) ?? { type: 'field', path: leftStr }
       const right = parseExpressionValue(rightStr) ?? { type: 'field', path: rightStr }
       return {
