@@ -303,7 +303,7 @@ function tryParseListFilter(
   if (condition.match(/^#this\s*!=\s*null$/))
     return { base, listFilter: { comparator: 'isNotNull' } }
 
-  // #this.field op value
+  // #this.field op value (对象元素: #this.code == 'admin')
   const fieldCond = condition.match(/^#this\.([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (fieldCond) {
     const val = parseExpressionValue(fieldCond[3].trim())
@@ -313,7 +313,17 @@ function tryParseListFilter(
     }
   }
 
-  // #this op value
+  // field op value (对象元素: code == 'admin', 无 #this. 前缀)
+  const bareFieldCond = condition.match(/^([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
+  if (bareFieldCond) {
+    const val = parseExpressionValue(bareFieldCond[3].trim())
+    return {
+      base,
+      listFilter: { comparator: bareFieldCond[2], fieldPath: bareFieldCond[1].trim(), value: val || undefined },
+    }
+  }
+
+  // #this op value (基本类型数组: #this == 'item1')
   const thisCond = condition.match(/^#this\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (thisCond) {
     const val = parseExpressionValue(thisCond[2].trim())
@@ -415,9 +425,21 @@ function parseCondition(expr: string): RuleNode {
     }
   }
 
-  // 3. 尝试 count 操作
+  // 3. 尝试 count 操作 (含列表过滤组合: #user.roles.?[code == 'admin'].size() == 1)
   const countResult = tryParseCountOperator(t)
   if (countResult) {
+    // count 的左值可能包含列表过滤: #user.roles.?[code == 'admin']
+    const filterParts = tryParseListFilter(countResult.left)
+    if (filterParts) {
+      return {
+        id: generateId(),
+        type: 'condition',
+        left: parseExpressionValue(filterParts.base) ?? { type: 'field', path: filterParts.base },
+        comparator: countResult.comparator,
+        right: countResult.right,
+        listFilter: filterParts.listFilter,
+      }
+    }
     return {
       id: generateId(),
       type: 'condition',

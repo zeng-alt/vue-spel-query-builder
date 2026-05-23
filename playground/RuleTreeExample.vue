@@ -59,7 +59,7 @@ const handleCopyExpression = () => {
 }
 
 // ─── SpEL → 规则树 ────────────────────────────────────────────
-const spelInput = ref(`#user.age > 18 && (#user.name == '张三' || #user.email != null)`)
+const spelInput = ref(`#user.roles.?[code == 'admin'].size() == 1 && #user.age > 18`)
 
 const handleApplyExpression = () => {
   if (spelInput.value.trim()) {
