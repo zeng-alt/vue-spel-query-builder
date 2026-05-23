@@ -301,6 +301,13 @@ function tryParseListFilter(
   const fieldCond = condition.match(/^#this\.([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (fieldCond) {
     const val = parseExpressionValue(fieldCond[3].trim())
+    // 检测 null 比较 → 用 isNull/isNotNull
+    if (val?.type === 'field' && val.path === 'null') {
+      return {
+        base,
+        listFilter: { comparator: fieldCond[2] === '==' ? 'isNull' : 'isNotNull', fieldPath: fieldCond[1].trim() },
+      }
+    }
     return {
       base,
       listFilter: { comparator: fieldCond[2], fieldPath: fieldCond[1].trim(), value: val || undefined },
@@ -311,6 +318,13 @@ function tryParseListFilter(
   const bareFieldCond = condition.match(/^([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (bareFieldCond) {
     const val = parseExpressionValue(bareFieldCond[3].trim())
+    // 检测 null 比较 → 用 isNull/isNotNull
+    if (val?.type === 'field' && val.path === 'null') {
+      return {
+        base,
+        listFilter: { comparator: bareFieldCond[2] === '==' ? 'isNull' : 'isNotNull', fieldPath: bareFieldCond[1].trim() },
+      }
+    }
     return {
       base,
       listFilter: { comparator: bareFieldCond[2], fieldPath: bareFieldCond[1].trim(), value: val || undefined },
@@ -321,6 +335,13 @@ function tryParseListFilter(
   const thisCond = condition.match(/^#this\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (thisCond) {
     const val = parseExpressionValue(thisCond[2].trim())
+    // 检测 null 比较 → 用 isNull/isNotNull
+    if (val?.type === 'field' && val.path === 'null') {
+      return {
+        base,
+        listFilter: { comparator: thisCond[1] === '==' ? 'isNull' : 'isNotNull' },
+      }
+    }
     return {
       base,
       listFilter: { comparator: thisCond[1], value: val || undefined },
