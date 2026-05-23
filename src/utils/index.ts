@@ -138,11 +138,18 @@ export function formatExpression(expr?: Expression): string {
       return expr.path
     case 'function': {
       const base = expr.call.base ? formatExpression(expr.call.base) : ''
+      const args = expr.call.args.map(formatExpression)
 
       if (base) {
-        return `${base}.${format(expr.call.method, expr.call.args.map(formatExpression))}`
+        const result = format(expr.call.method, args)
+        return `${base}.${result}`
       }
-      return `${format(expr.call.method, expr.call.args.map(formatExpression))}`
+      // 独立函数：如果 method 模板不含 {N}，手动拼接 (arg1, arg2, ...)
+      const formatted = format(expr.call.method, args)
+      if (formatted === expr.call.method && args.length > 0) {
+        return `${expr.call.method}(${args.join(', ')})`
+      }
+      return formatted
     }
     default:
       return ''
