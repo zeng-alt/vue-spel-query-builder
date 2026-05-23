@@ -81,6 +81,7 @@ const customMethods: CustomMethod[] = [
     params: [{ name: 'value', type: 'any' }],
     returnType: 'boolean',
     description: '判断字符串或数组是否为空',
+    fn: (value: unknown) => value == null || (typeof value === 'string' && value.trim().length === 0) || (Array.isArray(value) && value.length === 0),
   },
   {
     name: 'calculate',
@@ -88,6 +89,7 @@ const customMethods: CustomMethod[] = [
     params: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
     returnType: 'number',
     description: '执行自定义计算',
+    fn: (a: number, b: number) => a + b,
   },
 ]
 

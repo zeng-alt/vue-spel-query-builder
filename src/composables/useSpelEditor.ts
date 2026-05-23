@@ -31,7 +31,7 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
     try {
       const expression = internalValue.value
       spelService.setContext(props.authentication, props.principal)
-      spelService.setMethods(props.methods, props.locals as Record<string, (...args: any[]) => any>)
+      spelService.setMethods(props.methods)
       const result = spelService.eval(expression, props.locals)
 
       emit('run', result, undefined)

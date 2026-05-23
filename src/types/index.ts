@@ -11,6 +11,7 @@ export interface CustomMethod {
   params?: CustomMethodParam[]
   returnType?: string
   description?: string
+  fn?: (...args: any[]) => any
 }
 
 export interface SpelEditorProps {

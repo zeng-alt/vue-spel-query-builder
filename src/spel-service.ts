@@ -11,17 +11,17 @@ class SpelService {
   }
 
   /**
-   * 注册自定义方法。调用 eval 时会自动合并到 locals 中，确保 spel2js 能正确调用。
+   * 注册自定义方法。从 methods 中提取 fn 实现，eval 时自动合并到 locals 中。
    */
-  setMethods(methods?: CustomMethod[], fnImpl?: Record<string, (...args: any[]) => any>) {
-    if (!methods || !fnImpl) {
+  setMethods(methods?: CustomMethod[]) {
+    if (!methods) {
       this.methods = undefined
       return
     }
     this.methods = {}
     for (const m of methods) {
-      if (fnImpl[m.name]) {
-        this.methods[m.name] = fnImpl[m.name]
+      if (typeof m.fn === 'function') {
+        this.methods[m.name] = m.fn
       }
     }
   }
