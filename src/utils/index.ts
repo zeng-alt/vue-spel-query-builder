@@ -64,8 +64,9 @@ export function ruleNodeToSpel(node: RuleNode): string {
           break
         }
       }
-      // 列表过滤已完整表达条件（无独立 right），直接返回
-      if (!node.right) return leftExpr
+      // 列表过滤 + 默认 == 比较符 → 列表过滤已完整表达条件，直接返回
+      // 列表过滤 + 显式比较符(isNull/isNotNull等) → 继续执行，追加条件级表达式
+      if (!node.right && node.comparator === '==') return leftExpr
     }
 
     // 2. 数组 count 操作符需要追加 .size()
