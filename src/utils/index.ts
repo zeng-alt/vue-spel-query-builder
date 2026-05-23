@@ -199,6 +199,8 @@ function splitTopLevel(expr: string, operator: string): string[] {
     } else if (!inString) {
       if (ch === '(') depth++
       else if (ch === ')') depth--
+      else if (ch === '[') depth++
+      else if (ch === ']') depth--
       else if (depth === 0 && expr.substring(i, i + opLen) === operator) {
         parts.push(expr.substring(lastIndex, i))
         i += opLen - 1
@@ -367,6 +369,7 @@ function tryParseCountOperator(
  */
 function findTopLevelOperator(expr: string, operator: string): number {
   let depth = 0
+  let bracketDepth = 0
   let inString = false
   for (let i = 0; i <= expr.length - operator.length; i++) {
     const ch = expr[i]
@@ -374,7 +377,9 @@ function findTopLevelOperator(expr: string, operator: string): number {
     else if (!inString) {
       if (ch === '(') depth++
       else if (ch === ')') depth--
-      else if (depth === 0 && expr.substring(i, i + operator.length) === operator) {
+      else if (ch === '[') bracketDepth++
+      else if (ch === ']') bracketDepth--
+      else if (depth === 0 && bracketDepth === 0 && expr.substring(i, i + operator.length) === operator) {
         const prevChar = i > 0 ? expr[i - 1] : ' '
         if (operator === '=' && prevChar === '=') continue
         if (operator === '>' && prevChar === '=') continue
