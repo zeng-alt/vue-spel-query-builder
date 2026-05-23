@@ -78,7 +78,8 @@ function filterCtx(ap: string, inside: string, pos: number) {
 
 
 const extensions = computed(() => {
-  // 每次上下文变化时重新构建 completionSource，确保增删属性后提示实时更新
+  // 追踪上下文依赖，变化时重新构建 completionSource
+  void A(); void B(); void L(); void M()
   const source: import('@codemirror/autocomplete').CompletionSource = (ctx) => {
     const word = ctx.matchBefore(/[#a-zA-Z_][\w#.]*/)
     const pos = ctx.pos
