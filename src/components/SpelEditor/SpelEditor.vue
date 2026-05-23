@@ -97,7 +97,11 @@ const extensions = computed(() => {
       if (type === 'array') { const am = buildArrayMeta(A(), B(), L())[base]; return { from: word.from + di + 1, options: toO(buildArrayMethodEntries(am), part) } }
     }
     const lower = text.toLowerCase()
-    return { from: word.from, options: buildEntries(A(), B(), L(), M()).filter(e => e.label.toLowerCase().startsWith(lower)).map(e => ({ label:e.label, type:e.type, detail:e.detail, apply:(v:EditorView) => v.dispatch({ changes: { from: word.from, to: word.to, insert: e.label } }) })) }
+    const opts = buildEntries(A(), B(), L(), M()).filter(e => e.label.toLowerCase().startsWith(lower))
+    return { from: word.from, options: opts.map(e => {
+      const txt = (e as any).insert || e.label
+      return { label:e.label, type:e.type, detail:e.detail, apply:(v:EditorView) => v.dispatch({ changes: { from: word.from, to: word.to, insert: txt } }) }
+    }) }
   }
 
   const tooltip = hoverTooltip((view, pos) => {
