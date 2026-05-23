@@ -205,9 +205,12 @@ const hasFilterValue = computed(() => {
   return !['isEmpty', 'isNotEmpty', 'isNull', 'isNotNull'].includes(comp)
 })
 
-// 当左侧字段改变时清空列表过滤
-watch(() => props.node.left, () => {
-  if (props.node.listFilter) {
+// 当左侧字段路径改变时清空列表过滤（忽略引用变化，仅当路径值变化时触发）
+watch(() => {
+  const left = props.node.left
+  return left?.type === 'field' ? left.path : null
+}, (newPath, oldPath) => {
+  if (oldPath && newPath !== oldPath && props.node.listFilter) {
     handleUpdate({ listFilter: undefined })
   }
 })
