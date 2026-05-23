@@ -1,0 +1,1 @@
+feat(rule-tree): implement SpEL to RuleNode parsing via setSpelExpression  

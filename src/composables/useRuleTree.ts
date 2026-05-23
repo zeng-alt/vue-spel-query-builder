@@ -1,4 +1,4 @@
-import { ruleNodeToSpel, createEmptyCondition, createEmptyGroup } from '../utils'
+import { ruleNodeToSpel, spelToRuleNode, createEmptyCondition, createEmptyGroup } from '../utils'
 import type { RuleNode, RuleTreeProps } from '../types'
 import { spelService } from '../spel-service'
 
@@ -7,8 +7,10 @@ export function useRuleTree(props: RuleTreeProps, emit: any) {
     return ruleNodeToSpel(props.modelValue)
   }
 
-  const setSpelExpression = (_expression: string) => {
-    console.warn('SpEL parsing to RuleTree is not implemented yet')
+  const setSpelExpression = (expression: string) => {
+    const ruleNode = spelToRuleNode(expression)
+    emit('update:modelValue', ruleNode)
+    emit('change', ruleNode)
   }
 
   const addCondition = (parentId: string) => {

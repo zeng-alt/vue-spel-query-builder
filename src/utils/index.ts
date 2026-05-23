@@ -1,8 +1,9 @@
 import { spelService } from '../spel-service'
-import type { RuleNode, LogicalOperator, Expression } from '../types'
+import type { RuleNode, LogicalOperator, Expression, ListFilter, FunctionCall } from '../types'
 
+let _idCounter = 0
 export function generateId(): string {
-  return `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return `node_${Date.now()}_${++_idCounter}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 export function validateSpelExpression(expression: string): { valid: boolean; error?: string } {
@@ -187,6 +188,36 @@ export function createEmptyCondition(): RuleNode {
   }
 }
 
+// ─── SpEL → RuleNode 解析 ────────────────────────────────────────────
+
+/**
+ * 在顶层拆分表达式（忽略括号内和引号内的内容）
+ */
+function splitTopLevel(expr: string, operator: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let inString = false
+  let lastIndex = 0
+  const opLen = operator.length
+
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i]
+    if (ch === "'") {
+      inString = !inString
+    } else if (!inString) {
+      if (ch === '(') depth++
+      else if (ch === ')') depth--
+      else if (depth === 0 && expr.substring(i, i + opLen) === operator) {
+        parts.push(expr.substring(lastIndex, i))
+        i += opLen - 1
+        lastIndex = i + 1
+      }
+    }
+  }
+  parts.push(expr.substring(lastIndex))
+  return parts.map((p) => p.trim()).filter((p) => p.length > 0)
+}
+
 /**
  * 创建一个新的空白分组节点
  */
@@ -196,5 +227,286 @@ export function createEmptyGroup(operator: LogicalOperator = 'and'): RuleNode {
     type: 'group',
     operator,
     children: [],
+  }
+}
+
+/**
+ * 检查是否为最外层括号包裹，如果是则剥离（递归处理多层）
+ */
+function stripOuterParens(expr: string): string {
+  let s = expr.trim()
+  while (s.startsWith('(') && s.endsWith(')')) {
+    let depth = 0
+    let matched = true
+    for (let i = 0; i < s.length - 1; i++) {
+      if (s[i] === '(') depth++
+      else if (s[i] === ')') depth--
+      if (depth === 0) {
+        matched = false
+        break
+      }
+    }
+    if (matched) {
+      s = s.substring(1, s.length - 1).trim()
+    } else {
+      break
+    }
+  }
+  return s
+}
+
+/**
+ * 尝试解析 isEmpty / isNotEmpty / isNull / isNotNull 特殊模式
+ */
+function tryParseSpecialCondition(expr: string): { field: string; comparator: string } | null {
+  const t = expr.trim()
+
+  // isEmpty:  X == null || X.isEmpty()
+  const isEmptyMatch = t.match(/^(.+?)\s*==\s*null\s*\|\|\s*\1\.isEmpty\(\)\s*$/)
+  if (isEmptyMatch) return { field: isEmptyMatch[1].trim(), comparator: 'isEmpty' }
+
+  // isNotEmpty:  X != null && !X.isEmpty()
+  const isNotEmptyMatch = t.match(/^(.+?)\s*!=\s*null\s*&&\s*!\1\.isEmpty\(\)\s*$/)
+  if (isNotEmptyMatch) return { field: isNotEmptyMatch[1].trim(), comparator: 'isNotEmpty' }
+
+  // isNull:  X == null
+  const isNullMatch = t.match(/^(.+?)\s*==\s*null\s*$/)
+  if (isNullMatch) return { field: isNullMatch[1].trim(), comparator: 'isNull' }
+
+  // isNotNull:  X != null
+  const isNotNullMatch = t.match(/^(.+?)\s*!=\s*null\s*$/)
+  if (isNotNullMatch) return { field: isNotNullMatch[1].trim(), comparator: 'isNotNull' }
+
+  return null
+}
+
+/**
+ * 尝试解析列表过滤模式:  field.?[condition]
+ */
+function tryParseListFilter(
+  expr: string,
+): { base: string; listFilter: ListFilter } | null {
+  const t = expr.trim()
+  const filterMatch = t.match(/^(.+?)\.\?\[(.+)\]$/)
+  if (!filterMatch) return null
+
+  const base = filterMatch[1].trim()
+  const condition = filterMatch[2].trim()
+
+  // 特殊条件
+  if (condition.match(/^#this\s*==\s*null\s*\|\|\s*#this\.isEmpty\(\)$/))
+    return { base, listFilter: { comparator: 'isEmpty' } }
+  if (condition.match(/^#this\s*!=\s*null\s*&&\s*!#this\.isEmpty\(\)$/))
+    return { base, listFilter: { comparator: 'isNotEmpty' } }
+  if (condition.match(/^#this\s*==\s*null$/))
+    return { base, listFilter: { comparator: 'isNull' } }
+  if (condition.match(/^#this\s*!=\s*null$/))
+    return { base, listFilter: { comparator: 'isNotNull' } }
+
+  // #this.field op value
+  const fieldCond = condition.match(/^#this\.([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
+  if (fieldCond) {
+    const val = parseExpressionValue(fieldCond[3].trim())
+    return {
+      base,
+      listFilter: { comparator: fieldCond[2], fieldPath: fieldCond[1].trim(), value: val || undefined },
+    }
+  }
+
+  // #this op value
+  const thisCond = condition.match(/^#this\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
+  if (thisCond) {
+    const val = parseExpressionValue(thisCond[2].trim())
+    return {
+      base,
+      listFilter: { comparator: thisCond[1], value: val || undefined },
+    }
+  }
+
+  return null
+}
+
+/**
+ * 尝试解析 count 操作:  expr.size() op value
+ */
+function tryParseCountOperator(
+  expr: string,
+): { left: string; comparator: string; right: Expression } | null {
+  const t = expr.trim()
+  const countMatch = t.match(/^(.+?)\.size\(\)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
+  if (!countMatch) return null
+  const right = parseExpressionValue(countMatch[3].trim())
+  if (!right) return null
+  return {
+    left: countMatch[1].trim(),
+    comparator: `count ${countMatch[2]}`,
+    right,
+  }
+}
+
+/**
+ * 在顶层查找操作符位置（不在括号/引号内），防止多字符操作符误匹配
+ */
+function findTopLevelOperator(expr: string, operator: string): number {
+  let depth = 0
+  let inString = false
+  for (let i = 0; i <= expr.length - operator.length; i++) {
+    const ch = expr[i]
+    if (ch === "'") inString = !inString
+    else if (!inString) {
+      if (ch === '(') depth++
+      else if (ch === ')') depth--
+      else if (depth === 0 && expr.substring(i, i + operator.length) === operator) {
+        const prevChar = i > 0 ? expr[i - 1] : ' '
+        if (operator === '=' && prevChar === '=') continue
+        if (operator === '>' && prevChar === '=') continue
+        if (operator === '<' && prevChar === '=') continue
+        if (operator === '!' && prevChar === '!') continue
+        return i
+      }
+    }
+  }
+  return -1
+}
+
+/**
+ * 解析条件表达式（叶子节点）
+ */
+function parseCondition(expr: string): RuleNode {
+  const t = expr.trim()
+  if (!t) return createEmptyCondition()
+
+  // 1. 尝试特殊模式 (isEmpty/isNotEmpty/isNull/isNotNull)
+  const special = tryParseSpecialCondition(t)
+  if (special) {
+    return {
+      id: generateId(),
+      type: 'condition',
+      left: parseExpressionValue(special.field) ?? { type: 'field', path: special.field },
+      comparator: special.comparator,
+    }
+  }
+
+  // 2. 尝试列表过滤
+  const filterResult = tryParseListFilter(t)
+  if (filterResult) {
+    return {
+      id: generateId(),
+      type: 'condition',
+      left: parseExpressionValue(filterResult.base) ?? { type: 'field', path: filterResult.base },
+      comparator: '==',
+      listFilter: filterResult.listFilter,
+    }
+  }
+
+  // 3. 尝试 count 操作
+  const countResult = tryParseCountOperator(t)
+  if (countResult) {
+    return {
+      id: generateId(),
+      type: 'condition',
+      left: parseExpressionValue(countResult.left) ?? { type: 'field', path: countResult.left },
+      comparator: countResult.comparator,
+      right: countResult.right,
+    }
+  }
+
+  // 4. 默认: 按比较符拆分 left op right
+  const ops = ['==', '!=', '>=', '<=', '>', '<']
+  for (const op of ops) {
+    const idx = findTopLevelOperator(t, op)
+    if (idx !== -1) {
+      const leftStr = t.substring(0, idx).trim()
+      const rightStr = t.substring(idx + op.length).trim()
+      const left = parseExpressionValue(leftStr) ?? { type: 'field', path: leftStr }
+      const right = parseExpressionValue(rightStr) ?? { type: 'field', path: rightStr }
+      return {
+        id: generateId(),
+        type: 'condition',
+        left,
+        comparator: op,
+        right,
+      }
+    }
+  }
+
+  // 无法解析，返回默认
+  return {
+    id: generateId(),
+    type: 'condition',
+    left: parseExpressionValue(t) ?? { type: 'field', path: t },
+    comparator: '==',
+  }
+}
+
+/**
+ * 解析分组表达式（递归）
+ */
+function parseGroup(expr: string): RuleNode {
+  let t = expr.trim()
+  if (!t) return createEmptyGroup('and')
+
+  // 检查 not 分组:  !(...)
+  if (t.startsWith('!(') && t.endsWith(')')) {
+    const inner = t.substring(2, t.length - 1).trim()
+    let depth = 0
+    let matched = true
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === '(') depth++
+      else if (inner[i] === ')') depth--
+      if (depth < 0) { matched = false; break }
+    }
+    if (matched && depth === 0) {
+      const child = parseGroup(inner)
+      return {
+        id: generateId(),
+        type: 'group',
+        operator: 'not',
+        children: [child],
+      }
+    }
+  }
+
+  // 剥离最外层括号
+  t = stripOuterParens(t)
+
+  // 尝试 || (or)
+  const orParts = splitTopLevel(t, '||')
+  if (orParts.length > 1) {
+    return {
+      id: generateId(),
+      type: 'group',
+      operator: 'or',
+      children: orParts.map(parseGroup),
+    }
+  }
+
+  // 尝试 && (and)
+  const andParts = splitTopLevel(t, '&&')
+  if (andParts.length > 1) {
+    return {
+      id: generateId(),
+      type: 'group',
+      operator: 'and',
+      children: andParts.map(parseGroup),
+    }
+  }
+
+  // 单表达式 → 作为条件
+  return parseCondition(t)
+}
+
+/**
+ * 将 SpEL 表达式字符串解析为 RuleNode 树
+ * 支持 group (and/or/not) 和 condition 的逆向转换
+ */
+export function spelToRuleNode(expression: string): RuleNode {
+  const expr = expression.trim()
+  if (!expr) return createEmptyGroup('and')
+  try {
+    return parseGroup(expr)
+  } catch (e) {
+    console.error('SpEL → RuleNode 解析失败:', e)
+    return createEmptyGroup('and')
   }
 }

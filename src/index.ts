@@ -17,6 +17,7 @@ export {
   validateSpelExpression,
   evalSpelExpression,
   ruleNodeToSpel,
+  spelToRuleNode,
   createEmptyCondition,
   createEmptyGroup,
   generateId,

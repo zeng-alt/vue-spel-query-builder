@@ -58,6 +58,15 @@ const handleCopyExpression = () => {
   navigator.clipboard.writeText(spelExpression.value)
 }
 
+// ─── SpEL → 规则树 ────────────────────────────────────────────
+const spelInput = ref(`#user.age > 18 && (#user.name == '张三' || #user.email != null)`)
+
+const handleApplyExpression = () => {
+  if (spelInput.value.trim()) {
+    ruleTreeRef.value?.setSpelExpression(spelInput.value)
+  }
+}
+
 const codeExample = `import { ref } from 'vue'
 import { RuleTree, createEmptyGroup } from '@zeng-alt/vue-spel-query-builder'
 
@@ -170,6 +179,31 @@ const handleChange = (rule) => {
           </div>
           <div class="output-display">
             <code class="expression-code">{{ spelExpression || '(空)' }}</code>
+          </div>
+        </div>
+
+        <!-- SpEL → 规则树解析 -->
+        <div class="parse-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="i-carbon-spell-check" />
+              <div>
+                <h3 class="section-title-text">SpEL → 规则树</h3>
+                <p class="section-subtitle">输入表达式解析为规则树</p>
+              </div>
+            </div>
+            <button class="plain-btn plain-btn--primary" @click="handleApplyExpression">
+              <span class="i-carbon-arrow-right" />
+              应用
+            </button>
+          </div>
+          <div class="input-display">
+            <textarea
+              v-model="spelInput"
+              class="plain-textarea"
+              rows="3"
+              placeholder="输入 SpEL 表达式..."
+            ></textarea>
           </div>
         </div>
 
@@ -319,6 +353,7 @@ const handleChange = (rule) => {
 .config-section,
 .tree-section,
 .output-section,
+.parse-section,
 .actions-section,
 .guide-section,
 .code-section {
@@ -431,13 +466,29 @@ const handleChange = (rule) => {
   min-height: 300px;
 }
 
-.output-display {
+.output-display,
+.input-display {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
   border-radius: 8px;
   padding: 0.875rem;
   min-height: 60px;
   overflow-x: auto;
+}
+
+.output-display {
+  min-height: 60px;
+}
+
+.input-display {
+  padding: 0;
+  min-height: auto;
+  overflow: visible;
+}
+
+.input-display .plain-textarea {
+  border-radius: 8px;
+  min-height: 80px;
 }
 
 .expression-code {
