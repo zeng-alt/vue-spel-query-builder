@@ -1,5 +1,5 @@
 import { spelService } from '../spel-service'
-import type { RuleNode, LogicalOperator, Expression, ListFilter, FunctionCall } from '../types'
+import type { RuleNode, LogicalOperator, Expression, ListFilter } from '../types'
 
 let _idCounter = 0
 export function generateId(): string {
@@ -329,17 +329,17 @@ function tryParseListFilter(
 /**
  * 解析单个值表达式（字面量或字段引用）
  */
-function parseExpressionValue(str: string): Expression | null {
-  str = str.trim()
-  if (!str) return null
+function parseExpressionValue(raw: string): Expression | null {
+  const s = raw.trim()
+  if (!s) return null
 
-  if (str.startsWith("'") && str.endsWith("'"))
-    return { type: 'literal', value: str.slice(1, -1) }
-  if (/^-?\d+(\.\d+)?$/.test(str))
-    return { type: 'literal', value: str, literalType: 'number' }
-  if (str === 'true' || str === 'false')
-    return { type: 'literal', value: str }
-  return { type: 'field', path: str }
+  if (s.startsWith("'") && s.endsWith("'"))
+    return { type: 'literal', value: s.slice(1, -1) }
+  if (/^-?\d+(\.\d+)?$/.test(s))
+    return { type: 'literal', value: s, literalType: 'number' }
+  if (s === 'true' || s === 'false')
+    return { type: 'literal', value: s }
+  return { type: 'field', path: s }
 }
 
 /**
