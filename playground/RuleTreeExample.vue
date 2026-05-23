@@ -13,7 +13,42 @@ const initialRule = createEmptyGroup('and')
 
 const ruleTreeData = ref<RuleNode>(initialRule)
 
-const context = reactive({
+const authentication = reactive({
+  details: {
+    name: 'John',
+    email: 'john@example.com',
+    permissions: ['read', 'write', 'delete'],
+  },
+  authenticated: true,
+})
+
+const authenticationText = ref(JSON.stringify(authentication, null, 2))
+
+watch(authenticationText, (val) => {
+  try {
+    const parsed = JSON.parse(val)
+    Object.assign(authentication, parsed)
+  } catch {
+  }
+})
+
+const principal = reactive({
+  id: '12345',
+  username: 'john_doe',
+  enabled: true,
+})
+
+const principalText = ref(JSON.stringify(principal, null, 2))
+
+watch(principalText, (val) => {
+  try {
+    const parsed = JSON.parse(val)
+    Object.assign(principal, parsed)
+  } catch {
+  }
+})
+
+const locals = reactive({
   user: {
     name: '张三',
     age: 28,
@@ -29,12 +64,12 @@ const context = reactive({
   },
 })
 
-const contextText = ref(JSON.stringify(context, null, 2))
+const localsText = ref(JSON.stringify(locals, null, 2))
 
-watch(contextText, (val) => {
+watch(localsText, (val) => {
   try {
     const parsed = JSON.parse(val)
-    Object.assign(context, parsed)
+    Object.assign(locals, parsed)
   } catch {
   }
 })
@@ -119,13 +154,28 @@ const handleChange = (rule) => {
               </button>
             </div>
           </div>
-          <div class="config-editor">
-            <textarea
-              v-model="contextText"
-              class="plain-textarea"
-              rows="6"
-              placeholder="配置上下文变量..."
-            ></textarea>
+          <div class="config-grid">
+            <div class="config-panel">
+              <div class="config-panel-label">
+                <span class="i-carbon-id-management" />
+                <span>authentication</span>
+              </div>
+              <textarea v-model="authenticationText" class="plain-textarea" rows="4" placeholder="认证信息..."></textarea>
+            </div>
+            <div class="config-panel">
+              <div class="config-panel-label">
+                <span class="i-carbon-user" />
+                <span>principal</span>
+              </div>
+              <textarea v-model="principalText" class="plain-textarea" rows="4" placeholder="主体信息..."></textarea>
+            </div>
+            <div class="config-panel">
+              <div class="config-panel-label">
+                <span class="i-carbon-data-blob" />
+                <span>locals (#)</span>
+              </div>
+              <textarea v-model="localsText" class="plain-textarea" rows="4" placeholder="本地变量..."></textarea>
+            </div>
           </div>
         </div>
 
@@ -143,17 +193,9 @@ const handleChange = (rule) => {
             <RuleTree
               ref="ruleTreeRef"
               v-model="ruleTreeData"
-              :context="context"
-              :authentication="{
-                details: {
-                  name: 'John',
-                  permissions: ['read', 'write', 'delete'],
-                }
-              }"
-              :principal="{
-                date: '1111',
-              }"
-              :locals="context"
+              :authentication="authentication"
+              :principal="principal"
+              :locals="locals"
               :disabled="disabled"
               :theme="playgroundTheme"
               :size="playgroundSize"
@@ -374,83 +416,33 @@ const handleChange = (rule) => {
   color: var(--text-muted);
 }
 
-.config-editor {
-  border-radius: 8px;
-  overflow: auto;
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.625rem;
+}
+
+.config-panel {
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
-  box-sizing: border-box;
+  border-radius: 8px;
+  padding: 0.75rem;
 }
 
-.config-editor .plain-textarea {
-  border-radius: 0;
-  border: none;
+.config-panel-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.025em;
 }
 
-.config-editor .plain-textarea::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.config-editor .plain-textarea::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-
-.config-editor .plain-textarea::-webkit-scrollbar-thumb {
-  background: var(--border-secondary);
-  border-radius: 3px;
-}
-
-.config-editor .plain-textarea::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan);
-}
-
-.config-editor .plain-textarea::-webkit-resizer {
-  position: absolute;
-  width: 100%;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
-  border: none;
-  cursor: ns-resize;
-  bottom: 0;
-  left: 0;
-}
-
-.config-editor .plain-textarea::-webkit-resizer::before {
-  content: '';
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  background: var(--border-secondary);
-  border-radius: 2px;
-  transition: all 0.2s;
-}
-
-.config-editor .plain-textarea::-webkit-resizer::after {
-  content: '';
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  background: var(--border-secondary);
-  border-radius: 2px;
-  opacity: 0.5;
-  transition: all 0.2s;
-}
-
-.config-editor .plain-textarea:hover::-webkit-resizer::before {
-  background: var(--accent-cyan);
-  height: 5px;
-}
-
-.config-editor .plain-textarea:hover::-webkit-resizer::after {
-  background: var(--accent-cyan);
-  opacity: 0.7;
+.config-panel .plain-textarea {
+  min-height: 80px;
+  resize: vertical;
 }
 
 .config-input {
