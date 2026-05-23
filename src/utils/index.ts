@@ -351,6 +351,12 @@ function tryParseListFilter(
     return {
       base,
       listFilter: { comparator: thisCond[1], value: val || undefined },
+    }
+  }
+
+  return null
+}
+
 /**
  * 尝试解析列表投影模式:  field.![expr]
  */
@@ -369,12 +375,6 @@ function tryParseListProjection(
   if (!projection) return null
 
   return { base, projection }
-}
-
-    }
-  }
-
-  return null
 }
 
 /**
