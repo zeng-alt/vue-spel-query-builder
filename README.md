@@ -30,6 +30,11 @@ pnpm add @zeng-alt/vue-spel-query-builder
 npm install vue@^3.5.0 naive-ui@^2.44.0
 ```
 
+## 演示
+
+![rule tree](img/rule.png)
+![editor](img/editor.png)
+
 ## 快速开始
 
 ### 1. SpEL 编辑器模式
@@ -49,20 +54,20 @@ const authentication = {
     name: 'John',
     email: 'john@example.com',
     roles: ['admin', 'user'],
-  }
+  },
 }
 
 const principal = {
   id: '12345',
-  username: 'john_doe'
+  username: 'john_doe',
 }
 
 const locals = {
   user: {
     name: 'John',
     age: 25,
-    active: true
-  }
+    active: true,
+  },
 }
 </script>
 
@@ -99,15 +104,15 @@ const context = {
     email: 'zhangsan@example.com',
     roles: [
       { code: 'admin', label: '管理员' },
-      { code: 'user', label: '普通用户' }
+      { code: 'user', label: '普通用户' },
     ],
-    active: true
+    active: true,
   },
   order: {
     id: 'ORD-001',
     amount: 1000,
-    status: 'completed'
-  }
+    status: 'completed',
+  },
 }
 
 const handleChange = (rule: RuleNode) => {
@@ -132,26 +137,26 @@ const handleChange = (rule: RuleNode) => {
 
 ### SpelEditor 属性
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `string` | `''` | SpEL 表达式内容（v-model 双向绑定） |
-| `authentication` | `Record<string, any>` | `{}` | 认证上下文，字段路径以 `authentication.` 开头 |
-| `principal` | `Record<string, any>` | `{}` | 主体上下文，字段路径以 `principal.` 开头 |
-| `locals` | `Record<string, any>` | `{}` | 本地变量，字段路径以 `#` 开头 |
-| `height` | `string \| number` | `300` | 编辑器高度，像素值或 CSS 高度字符串 |
-| `theme` | `'light' \| 'dark'` | `'dark'` | 主题样式 |
-| `size` | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | 组件尺寸 |
-| `disabled` | `boolean` | `false` | 是否禁用编辑 |
-| `readonly` | `boolean` | `false` | 是否只读 |
+| 属性             | 类型                                       | 默认值    | 说明                                          |
+| ---------------- | ------------------------------------------ | --------- | --------------------------------------------- |
+| `modelValue`     | `string`                                   | `''`      | SpEL 表达式内容（v-model 双向绑定）           |
+| `authentication` | `Record<string, any>`                      | `{}`      | 认证上下文，字段路径以 `authentication.` 开头 |
+| `principal`      | `Record<string, any>`                      | `{}`      | 主体上下文，字段路径以 `principal.` 开头      |
+| `locals`         | `Record<string, any>`                      | `{}`      | 本地变量，字段路径以 `#` 开头                 |
+| `height`         | `string \| number`                         | `300`     | 编辑器高度，像素值或 CSS 高度字符串           |
+| `theme`          | `'light' \| 'dark'`                        | `'dark'`  | 主题样式                                      |
+| `size`           | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | 组件尺寸                                      |
+| `disabled`       | `boolean`                                  | `false`   | 是否禁用编辑                                  |
+| `readonly`       | `boolean`                                  | `false`   | 是否只读                                      |
 
 ### SpelEditor 事件
 
-| 事件名 | 参数 | 说明 |
-|--------|------|------|
-| `update:modelValue` | `(value: string)` | 表达式值变更时触发 |
-| `change` | `(value: string)` | 内容变化时触发 |
-| `validate` | `(isValid: boolean, error?: string)` | 表达式验证结果 |
-| `run` | `(result: any, error?: string)` | 表达式执行结果 |
+| 事件名              | 参数                                 | 说明               |
+| ------------------- | ------------------------------------ | ------------------ |
+| `update:modelValue` | `(value: string)`                    | 表达式值变更时触发 |
+| `change`            | `(value: string)`                    | 内容变化时触发     |
+| `validate`          | `(isValid: boolean, error?: string)` | 表达式验证结果     |
+| `run`               | `(result: any, error?: string)`      | 表达式执行结果     |
 
 ### SpelEditor 方法（通过 ref 调用）
 
@@ -176,22 +181,22 @@ editorRef.value.focus()
 
 ### RuleTree 属性
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `RuleNode` | 必填 | 规则树数据（v-model 双向绑定） |
-| `authentication` | `Record<string, any>` | `{}` | 认证上下文，字段路径以 `authentication.` 开头 |
-| `principal` | `Record<string, any>` | `{}` | 主体上下文，字段路径以 `principal.` 开头 |
-| `locals` | `Record<string, any>` | `{}` | 本地变量，字段路径以 `#` 开头 |
-| `theme` | `'light' \| 'dark'` | `'light'` | 主题样式 |
-| `size` | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | 组件尺寸 |
-| `disabled` | `boolean` | `false` | 是否禁用操作 |
+| 属性             | 类型                                       | 默认值    | 说明                                          |
+| ---------------- | ------------------------------------------ | --------- | --------------------------------------------- |
+| `modelValue`     | `RuleNode`                                 | 必填      | 规则树数据（v-model 双向绑定）                |
+| `authentication` | `Record<string, any>`                      | `{}`      | 认证上下文，字段路径以 `authentication.` 开头 |
+| `principal`      | `Record<string, any>`                      | `{}`      | 主体上下文，字段路径以 `principal.` 开头      |
+| `locals`         | `Record<string, any>`                      | `{}`      | 本地变量，字段路径以 `#` 开头                 |
+| `theme`          | `'light' \| 'dark'`                        | `'light'` | 主题样式                                      |
+| `size`           | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | 组件尺寸                                      |
+| `disabled`       | `boolean`                                  | `false`   | 是否禁用操作                                  |
 
 ### RuleTree 事件
 
-| 事件名 | 参数 | 说明 |
-|--------|------|------|
+| 事件名              | 参数                | 说明               |
+| ------------------- | ------------------- | ------------------ |
 | `update:modelValue` | `(value: RuleNode)` | 规则数据变更时触发 |
-| `change` | `(value: RuleNode)` | 数据变化时触发 |
+| `change`            | `(value: RuleNode)` | 数据变化时触发     |
 
 ### RuleTree 方法（通过 ref 调用）
 
@@ -255,9 +260,9 @@ const rule: RuleNode = {
       type: 'condition',
       left: { type: 'field', path: 'user.age' },
       comparator: '>',
-      right: { type: 'literal', value: '18' }
-    }
-  ]
+      right: { type: 'literal', value: '18' },
+    },
+  ],
 }
 
 const expression = ruleNodeToSpel(rule)
@@ -275,9 +280,9 @@ const authentication = {
   details: {
     name: 'John',
     email: 'john@example.com',
-    permissions: ['read', 'write', 'delete']
+    permissions: ['read', 'write', 'delete'],
   },
-  authenticated: true
+  authenticated: true,
 }
 ```
 
@@ -291,7 +296,7 @@ const authentication = {
 const principal = {
   id: '12345',
   username: 'john_doe',
-  roles: ['admin', 'user']
+  roles: ['admin', 'user'],
 }
 ```
 
@@ -305,11 +310,11 @@ const principal = {
 const locals = {
   user: {
     name: '张三',
-    age: 28
+    age: 28,
   },
   order: {
-    amount: 1000
-  }
+    amount: 1000,
+  },
 }
 ```
 
@@ -375,11 +380,11 @@ authentication.details.name == principal.username
 interface RuleNode {
   id: string
   type: 'condition' | 'group'
-  
+
   // 分组专有
   operator?: 'and' | 'or' | 'not'
   children?: RuleNode[]
-  
+
   // 条件专有
   left?: Expression
   comparator?: string
