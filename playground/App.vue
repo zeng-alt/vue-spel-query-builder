@@ -2,7 +2,7 @@
 import { ref, provide, computed, type Ref } from 'vue'
 import SpelEditorExample from './SpelEditorExample.vue'
 import RuleTreeExample from './RuleTreeExample.vue'
-import type { ComponentSize } from '../src'
+import type { ComponentSize } from '@zeng-alt/vue-spel-query-builder'
 
 const activeTab = ref('spel-editor')
 

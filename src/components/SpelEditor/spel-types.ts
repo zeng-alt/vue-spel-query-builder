@@ -7,6 +7,7 @@ export interface SpelEntry {
   detail: string
   desc: string
   extra?: string
+  insert?: string
 }
 
 /**

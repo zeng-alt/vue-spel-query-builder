@@ -4,9 +4,8 @@
   "exclude": ["src/**/__tests__/*", "playground/**/*"],
   "compilerOptions": {
     "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "declaration": true,
     "declarationDir": "./dist",

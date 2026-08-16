@@ -18,16 +18,20 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 .idea
-.trea
+.trea/*
+.cline/*
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+AGENTS.md
 
 *.tsbuildinfo
 
 .eslintcache
+
+components.d.ts
 
 # Cypress
 /cypress/videos/
@@ -38,3 +42,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# UnoCSS build temp file
+uno-test.mjs

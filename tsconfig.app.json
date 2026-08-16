@@ -4,9 +4,9 @@
   "exclude": ["src/**/__tests__/*"],
   "compilerOptions": {
     "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"],
+      "@zeng-alt/vue-spel-query-builder": ["./dist/index.d.ts"]
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   }

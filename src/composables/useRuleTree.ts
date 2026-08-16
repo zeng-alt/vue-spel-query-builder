@@ -2,7 +2,10 @@ import { ruleNodeToSpel, spelToRuleNode, createEmptyCondition, createEmptyGroup 
 import type { RuleNode, RuleTreeProps } from '../types'
 import { spelService } from '../spel-service'
 
-export function useRuleTree(props: RuleTreeProps, emit: any) {
+export function useRuleTree(
+  props: RuleTreeProps,
+  emit: (event: string, ...args: unknown[]) => void,
+) {
   const getSpelExpression = () => {
     return ruleNodeToSpel(props.modelValue)
   }

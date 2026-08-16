@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
 import type { Expression, FunctionCall, FunctionDef, FieldOption, ComponentSize, CustomMethod } from '../../types'
+import { useSpelI18n } from '../../composables'
 
 // ─── 扩展的函数定义（增加 returnType） ────────────────────────
 
@@ -59,13 +60,15 @@ const emit = defineEmits<{
   'update:modelValue': [value: Expression]
 }>()
 
+const { t } = useSpelI18n()
+
 // ─── 类型选项 ──────────────────────────────────────────────────
 const typeOptions = computed(() => {
   const ops: { label: string; value: Expression['type'] }[] = [
-    { label: '字段', value: 'field' },
+    { label: t('expressionEditor.type.field'), value: 'field' },
   ]
-  if (props.allowLiteral) ops.push({ label: '值', value: 'literal' })
-  if (props.allowFunction) ops.push({ label: '方法', value: 'function' })
+  if (props.allowLiteral) ops.push({ label: t('expressionEditor.type.literal'), value: 'literal' })
+  if (props.allowFunction) ops.push({ label: t('expressionEditor.type.function'), value: 'function' })
   return ops
 })
 
@@ -105,7 +108,7 @@ const filteredFunctionOptions = computed(() => {
     .map(f => ({ label: f.label, value: f.value }))
   if (!props.methods) return builtin
   const custom = props.methods
-    .filter(m => !props.baseTypeFilter) // custom methods have no returnType filter
+    .filter(() => !props.baseTypeFilter) // custom methods have no returnType filter
     .map(m => ({ label: `${m.name}(...)`, value: m.name }))
   return [...builtin, ...custom]
 })
@@ -172,10 +175,7 @@ function updateArg(index: number, expr: Expression) {
 }
 
 // ─── 占位符文本 ────────────────────────────────────────────────
-const literalPlaceholder = computed(() => {
-  if (props.baseTypeFilter) return `输入${props.baseTypeFilter}值…`
-  return '输入值…'
-})
+const literalPlaceholder = computed(() => t('expressionEditor.placeholder.value'))
 
 const safeLiteralValue = computed(() => {
   if (props.modelValue.type === 'literal') {
@@ -196,7 +196,7 @@ watchEffect(() => {
     <template v-if="forceNumberInput">
       <n-input-number
         :value="safeLiteralValue !== '' ? Number(safeLiteralValue) : null"
-        placeholder="数字…"
+        :placeholder="t('expressionEditor.placeholder.number')"
         :size="size"
         :disabled="disabled"
         class="!w-[120px]"
@@ -220,7 +220,7 @@ watchEffect(() => {
           <!-- 数字输入框 -->
           <n-input-number
             :value="Number(modelValue.value)"
-            placeholder="数字…"
+            :placeholder="t('expressionEditor.placeholder.number')"
             :size="size"
             :disabled="disabled"
             class="!w-[110px]"
@@ -245,7 +245,7 @@ watchEffect(() => {
         <n-cascader
           :value="modelValue.path"
           :options="filteredFieldOptions"
-          placeholder="选择字段…"
+          :placeholder="t('expressionEditor.placeholder.field')"
           :size="size"
           :disabled="disabled"
           class="!w-[160px]"
@@ -261,7 +261,7 @@ watchEffect(() => {
         <n-select
           :value="modelValue.call.method"
           :options="filteredFunctionOptions"
-          placeholder="方法…"
+          :placeholder="t('expressionEditor.placeholder.method')"
           :size="size"
           :disabled="disabled"
           class="!w-[130px]"

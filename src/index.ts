@@ -1,5 +1,5 @@
 export { spelService } from './spel-service'
-export { SpelEditor, RuleTree } from './components'
+export { SpelEditor, RuleTree, SpelConfigProvider } from './components'
 export type {
   SpelEditorProps,
   SpelEditorEmits,
@@ -13,8 +13,9 @@ export type {
   ContextVariable,
   Comparator,
   ComponentSize,
+  SpelLocale,
 } from './types'
-export { useSpelEditor, useRuleTree } from './composables'
+export { useSpelEditor, useRuleTree, useSpelI18n } from './composables'
 export {
   validateSpelExpression,
   evalSpelExpression,
@@ -31,4 +32,17 @@ export {
   EDITOR_DEFAULT_HEIGHT,
   RULE_TREE_DEFAULT_HEIGHT,
 } from './constants'
+export {
+  setLocale,
+  setLocaleFallback,
+  setLocaleMessages,
+  getLocale,
+  getLocaleFallback,
+  t,
+  resolveNaiveLocale,
+  resolveNaiveDateLocale,
+  provideSpelConfig,
+  useSpelConfig,
+  type SpelConfigContext,
+} from './locales'
 

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, inject } from 'vue'
-import { RuleTree } from '../src'
-import type { RuleTreeInstance, RuleNode, CustomMethod } from '../src'
-import { createEmptyGroup } from '../src'
+import { RuleTree, createEmptyGroup } from '@zeng-alt/vue-spel-query-builder'
+import type { RuleTreeInstance, RuleNode, CustomMethod } from '@zeng-alt/vue-spel-query-builder'
 
 const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
-const playgroundSize = inject<import('vue').Ref<import('../src').ComponentSize>>('playgroundSize')!
+const playgroundSize = inject<import('vue').Ref<import('@zeng-alt/vue-spel-query-builder').ComponentSize>>('playgroundSize')!
 
 const ruleTreeRef = ref<RuleTreeInstance>()
 
@@ -753,50 +752,11 @@ const handleChange = (rule) => {
 }
 
 .plain-textarea::-webkit-resizer {
-  position: absolute;
-  width: 100%;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
-  border: none;
-  cursor: ns-resize;
-  bottom: 0;
-  left: 0;
+  background: linear-gradient(135deg, transparent 50%, var(--border-secondary) 50%);
+  border-radius: 0 0 6px 0;
 }
 
-.plain-textarea::-webkit-resizer::before {
-  content: '';
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  background: var(--border-secondary);
-  border-radius: 2px;
-  transition: all 0.2s;
-}
-
-.plain-textarea::-webkit-resizer::after {
-  content: '';
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  background: var(--border-secondary);
-  border-radius: 2px;
-  opacity: 0.5;
-  transition: all 0.2s;
-}
-
-.plain-textarea:hover::-webkit-resizer::before {
-  background: var(--accent-cyan);
-  height: 5px;
-}
-
-.plain-textarea:hover::-webkit-resizer::after {
-  background: var(--accent-cyan);
-  opacity: 0.7;
+.plain-textarea:hover::-webkit-resizer {
+  background: linear-gradient(135deg, transparent 50%, var(--accent-cyan) 50%);
 }
 </style>

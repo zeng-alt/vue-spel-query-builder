@@ -1,12 +1,13 @@
 import { StandardContext, SpelExpressionEvaluator } from 'spel2js'
+import type { EvaluationContext } from 'spel2js'
 import type { CustomMethod } from './types'
 
 // wraps spel2js in a stateful service that simplifies evaluation
 class SpelService {
-  private context: any = null
-  private methods?: Record<string, (...args: any[]) => any>
+  private context: EvaluationContext | null = null
+  private methods?: Record<string, (...args: unknown[]) => unknown>
 
-  setContext(authentication?: any, principal?: any) {
+  setContext(authentication?: unknown, principal?: unknown) {
     this.context = StandardContext.create(authentication, principal)
   }
 
@@ -34,13 +35,13 @@ class SpelService {
     return SpelExpressionEvaluator.compile(expression)
   }
 
-  eval(expression: string, locals?: Record<string, any>) {
+  eval(expression: string, locals?: Record<string, unknown>) {
     // 合并自定义方法到 context，确保 spel2js 能正确调用
-    let mergedContext = this.getContext()
+    let mergedContext: EvaluationContext | null = this.getContext()
     if (this.methods) {
       mergedContext = { ...this.getContext(), ...this.methods }
     }
-    return SpelExpressionEvaluator.eval(expression, mergedContext, locals)
+    return SpelExpressionEvaluator.eval(expression, mergedContext ?? undefined, locals)
   }
 }
 

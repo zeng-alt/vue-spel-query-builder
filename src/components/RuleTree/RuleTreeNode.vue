@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect, watch } from 'vue'
+import type { DirectiveBinding } from 'vue'
 import type { RuleNode, FieldOption, LogicalOperator, Expression, ListFilter, ComponentSize } from '../../types'
 import ExpressionEditor from './ExpressionEditor.vue'
 import { formatExpression } from '../../utils'
 import { spelService } from '../../spel-service'
+import { useSpelI18n } from '../../composables'
 
 const props = withDefaults(defineProps<{
   node: RuleNode
-  authentication?: Record<string, any>
-  principal?: Record<string, any>
-  locals?: Record<string, any>
+  authentication?: Record<string, unknown>
+  principal?: Record<string, unknown>
+  locals?: Record<string, unknown>
   methods?: import('../../types').CustomMethod[]
   disabled?: boolean
   level?: number
@@ -26,6 +28,8 @@ const emit = defineEmits<{
   (e: 'remove-node', id: string): void
   (e: 'update-node', id: string, updates: Partial<RuleNode>): void
 }>()
+
+const { t } = useSpelI18n()
 
 const level = props.level ?? 0
 const isEditing = ref(false)
@@ -47,19 +51,25 @@ const fieldOptions = computed<FieldOption[]>(() => {
   return result
 })
 
-function buildFieldOptions(obj: Record<string, any>, prefix = ''): FieldOption[] {
+function buildFieldOptions(obj: Record<string, unknown>, prefix = ''): FieldOption[] {
   const options: FieldOption[] = []
   for (const [key, value] of Object.entries(obj)) {
     const fullPath = prefix ? (prefix === '#' ? `#${key}` : `${prefix}.${key}`) : key
     if (Array.isArray(value)) {
       const elementType = value.length > 0 ? typeof value[0] : 'number'
       const option: FieldOption = { label: key, value: fullPath, type: 'array', elementType }
-      if (elementType === 'object' && value.length > 0 && value[0] && !Array.isArray(value[0])) {
-        option.elementChildren = buildFieldOptions(value[0], '') // 取第一个元素构建子字段
+      const first = value[0]
+      if (elementType === 'object' && first && typeof first === 'object' && !Array.isArray(first)) {
+        option.elementChildren = buildFieldOptions(first as Record<string, unknown>, '') // 取第一个元素构建子字段
       }
       options.push(option)
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      options.push({ label: key, value: fullPath, type: 'object', children: buildFieldOptions(value, fullPath) })
+      options.push({
+        label: key,
+        value: fullPath,
+        type: 'object',
+        children: buildFieldOptions(value as Record<string, unknown>, fullPath),
+      })
     } else {
       options.push({ label: key, value: fullPath, type: typeof value })
     }
@@ -68,15 +78,15 @@ function buildFieldOptions(obj: Record<string, any>, prefix = ''): FieldOption[]
 }
 
 // ─── 逻辑分组操作符 ──────────────────────────────────────────
-const logicalOperatorOptions = [
-  { label: '且', value: 'and' },
-  { label: '或', value: 'or' },
-  { label: '非', value: 'not' },
-]
+const logicalOperatorOptions = computed(() => [
+  { label: t('ruleTree.group.and'), value: 'and' },
+  { label: t('ruleTree.group.or'), value: 'or' },
+  { label: t('ruleTree.group.not'), value: 'not' },
+])
 const currentOperator = computed(() => props.node.operator ?? 'and')
 
 // ─── 运行时类型检测 ──────────────────────────────────────────
-function getDetailedType(val: any): string {
+function getDetailedType(val: unknown): string {
   if (val === null || val === undefined) return 'null'
   if (Array.isArray(val)) return 'array'
   const t = typeof val
@@ -100,37 +110,66 @@ watchEffect(() => {
 })
 
 // ─── 通用操作符生成函数 ──────────────────────────────────────
+const comparatorLabelMap: Record<string, string> = {
+  '==': 'comparators.eq',
+  '!=': 'comparators.ne',
+  '>': 'comparators.gt',
+  '>=': 'comparators.gte',
+  '<': 'comparators.lt',
+  '<=': 'comparators.lte',
+  contains: 'comparators.contains',
+  startsWith: 'comparators.startsWith',
+  endsWith: 'comparators.endsWith',
+  matches: 'comparators.matches',
+  in: 'comparators.in',
+  'not in': 'comparators.notIn',
+  isEmpty: 'comparators.isEmpty',
+  isNotEmpty: 'comparators.isNotEmpty',
+  isNull: 'comparators.isNull',
+  isNotNull: 'comparators.isNotNull',
+  'count ==': 'comparators.countEq',
+  'count !=': 'comparators.countNe',
+  'count <': 'comparators.countLt',
+  'count <=': 'comparators.countLte',
+  'count >': 'comparators.countGt',
+  'count >=': 'comparators.countGte',
+}
+
+function getComparatorLabel(value: string): string {
+  return t(comparatorLabelMap[value] ?? `comparators.${value}`)
+}
+
 function getComparatorsForType(type: string | null): { label: string; value: string }[] {
   const base = [
-    { label: '==', value: '==' },
-    { label: '!=', value: '!=' },
-    { label: 'isNull', value: 'isNull' },
-    { label: 'isNotNull', value: 'isNotNull' },
+    { label: getComparatorLabel('=='), value: '==' },
+    { label: getComparatorLabel('!='), value: '!=' },
+    { label: getComparatorLabel('isNull'), value: 'isNull' },
+    { label: getComparatorLabel('isNotNull'), value: 'isNotNull' },
   ]
   if (!type) {
     return [...base,
-      { label: '>', value: '>' }, { label: '>=', value: '>=' },
-      { label: '<', value: '<' }, { label: '<=', value: '<=' },
-      { label: 'isEmpty', value: 'isEmpty' }, { label: 'isNotEmpty', value: 'isNotEmpty' },
+      { label: getComparatorLabel('>'), value: '>' }, { label: getComparatorLabel('>='), value: '>=' },
+      { label: getComparatorLabel('<'), value: '<' }, { label: getComparatorLabel('<='), value: '<=' },
+      { label: getComparatorLabel('isEmpty'), value: 'isEmpty' }, { label: getComparatorLabel('isNotEmpty'), value: 'isNotEmpty' },
     ]
   }
   switch (type) {
     case 'number':
-      return [...base, { label: '>', value: '>' }, { label: '>=', value: '>=' }, { label: '<', value: '<' }, { label: '<=', value: '<=' }]
+      return [...base, { label: getComparatorLabel('>'), value: '>' }, { label: getComparatorLabel('>='), value: '>=' }, { label: getComparatorLabel('<'), value: '<' }, { label: getComparatorLabel('<='), value: '<=' }]
     case 'string':
-      return [...base, { label: 'isEmpty', value: 'isEmpty' }, { label: 'isNotEmpty', value: 'isNotEmpty' }]
+      return [...base, { label: getComparatorLabel('isEmpty'), value: 'isEmpty' }, { label: getComparatorLabel('isNotEmpty'), value: 'isNotEmpty' }]
     case 'boolean':
       return base
     case 'array':
       return [
-        { label: 'count ==', value: 'count ==' }, { label: 'count !=', value: 'count !=' },
-        { label: 'count <',  value: 'count <'  }, { label: 'count <=', value: 'count <=' },
-        { label: 'count >',  value: 'count >'  }, { label: 'count >=', value: 'count >=' },
-        ...base
+        { label: getComparatorLabel('count =='), value: 'count ==' }, { label: getComparatorLabel('count !='), value: 'count !=' },
+        { label: getComparatorLabel('count <'), value: 'count <' }, { label: getComparatorLabel('count <='), value: 'count <=' },
+        { label: getComparatorLabel('count >'), value: 'count >' }, { label: getComparatorLabel('count >='), value: 'count >=' },
+        ...base,
       ]
     case 'object':
     case 'null':
-      return [...base, { label: 'isEmpty', value: 'isEmpty' }, { label: 'isNotEmpty', value: 'isNotEmpty' }]
+      return [...base, { label: getComparatorLabel('isEmpty'), value: 'isEmpty' }, { label: getComparatorLabel('isNotEmpty'), value: 'isNotEmpty' }]
     default:
       return base
   }
@@ -310,20 +349,26 @@ function updateComparator(value: string) { handleUpdate({ comparator: value }) }
 function toggleEdit() { if (!props.disabled) isEditing.value = !isEditing.value }
 function closeEdit() { isEditing.value = false }
 
+interface ClickOutsideElement extends HTMLElement {
+  __clickOutsideHandler?: (event: MouseEvent) => void
+}
+
 // v-click-outside 指令
 const vClickOutside = {
-  mounted(el: HTMLElement, binding: any) {
+  mounted(el: ClickOutsideElement, binding: DirectiveBinding<(event: MouseEvent) => void>) {
     const handler = (event: MouseEvent) => {
       const target = event.target as HTMLElement
       if (target.closest('.n-cascader-menu') || target.closest('.n-popover-shared') || target.closest('.v-binder-follower-content')) return
       if (!el.contains(target) && el !== target) binding.value(event)
     }
-    ;(el as any).__clickOutsideHandler = handler
+    el.__clickOutsideHandler = handler
     document.addEventListener('click', handler, true)
   },
-  unmounted(el: HTMLElement) {
-    document.removeEventListener('click', (el as any).__clickOutsideHandler, true)
-    delete (el as any).__clickOutsideHandler
+  unmounted(el: ClickOutsideElement) {
+    if (el.__clickOutsideHandler) {
+      document.removeEventListener('click', el.__clickOutsideHandler, true)
+      delete el.__clickOutsideHandler
+    }
   },
 }
 
@@ -351,16 +396,16 @@ const listFilterLiteralValue = computed(() => {
   >
     <!-- 摘要行 -->
     <div class="group/row flex items-center gap-1.5 px-2.5 min-h-[34px] cursor-pointer select-none overflow-hidden" @click="toggleEdit">
-      <span class="i-carbon:rule text-[11px] flex-shrink-0 icon-muted" />
+      <span class="i-carbon:rule text-12" />
       <template v-if="isConfigured">
         <span class="expr-chip expr-chip--field font-mono text-[11px] flex-1 min-w-0">{{ summaryExpression.left || '?' }}</span>
         <span v-if="summaryExpression.op" class="expr-chip expr-chip--op text-[11px] font-semibold flex-shrink-0">{{ summaryExpression.op }}</span>
         <span v-if="summaryExpression.right" class="expr-chip expr-chip--val font-mono text-[11px] flex-1 min-w-0">{{ summaryExpression.right }}</span>
         <span v-else-if="hasValueInput" class="text-[11px] tracking-widest text-placeholder">···</span>
       </template>
-      <span v-else class="text-xs italic text-placeholder">点击配置条件…</span>
+      <span v-else class="text-xs italic text-placeholder">{{ t('ruleTree.condition.empty') }}</span>
       <n-button class="!ml-auto opacity-0 group-hover/row:opacity-100 transition-opacity duration-100 flex-shrink-0" text :size="size" type="error" :disabled="disabled" @click.stop="handleRemove">
-        <template #icon><span class="i-carbon:close text-xs" /></template>
+        <template #icon><span class="i-carbon:delete text-14" /></template>
       </n-button>
     </div>
 
@@ -370,21 +415,21 @@ const listFilterLiteralValue = computed(() => {
         <div class="flex items-start gap-2 flex-wrap">
           <!-- 左侧表达式 -->
           <div class="expr-block">
-            <div class="expr-block__label">左侧</div>
+            <div class="expr-block__label">{{ t('ruleTree.condition.left') }}</div>
             <div class="expr-block__body">
               <ExpressionEditor :model-value="node.left ?? { type: 'field', path: '' }" :field-options="fieldOptions" :methods="methods" :disabled="disabled" :allow-literal="false" :size="size" @update:model-value="updateLeft" />
             </div>
           </div>
           <!-- 操作符 -->
           <div class="expr-block">
-            <div class="expr-block__label">操作符</div>
+            <div class="expr-block__label">{{ t('ruleTree.condition.operator') }}</div>
             <div class="expr-block__body">
-              <n-select :value="node.comparator" :options="availableComparators" placeholder="…" :disabled="disabled" :size="size" class="!w-[108px]" @update:value="updateComparator" />
+              <n-select :value="node.comparator" :options="availableComparators" placeholder="…" :disabled="disabled" :size="size" class="auto-width" @update:value="updateComparator" />
             </div>
           </div>
           <!-- 右侧表达式 -->
           <div v-if="hasValueInput" class="expr-block">
-            <div class="expr-block__label">右侧</div>
+            <div class="expr-block__label">{{ t('ruleTree.condition.right') }}</div>
             <div class="expr-block__body">
               <ExpressionEditor v-if="isCountOperator" :model-value="node.right ?? { type: 'literal', value: '', literalType: 'number' }" :force-number-input="true" :disabled="disabled" :size="size" @update:model-value="updateRight" />
               <ExpressionEditor v-else :model-value="node.right ?? { type: 'literal', value: '', literalType: 'string' }" :field-options="fieldOptions" :methods="methods" :disabled="disabled" :allow-literal="true" :size="size" @update:model-value="updateRight" />
@@ -395,7 +440,7 @@ const listFilterLiteralValue = computed(() => {
         <!-- 列表区块（仅当左侧为数组时显示）：对象数组 + ==/!= 显示投影，否则显示过滤 -->
         <div v-if="leftType === 'array'" class="flex items-start gap-2 flex-wrap">
           <div class="expr-block">
-            <div class="expr-block__label">列表过滤</div>
+            <div class="expr-block__label">{{ t('ruleTree.condition.listFilter') }}</div>
             <div class="expr-block__body">
               <!-- 基本类型：直接 #this -->
               <template v-if="listElementType !== 'object'">
@@ -403,9 +448,9 @@ const listFilterLiteralValue = computed(() => {
                 <n-select
                   :value="node.listFilter?.comparator ?? ''"
                   :options="listFilterComparators"
-                  placeholder="操作符"
+                  :placeholder="t('ruleTree.condition.placeholder.operator')"
                   :size="size"
-                  class="!w-[80px]"
+                  class="auto-width"
                   :disabled="disabled"
                   @update:value="updateListFilterComparator"
                 />
@@ -424,7 +469,7 @@ const listFilterLiteralValue = computed(() => {
                     :size="size"
                     class="!w-[120px]"
                     :disabled="disabled"
-                    placeholder="文本…"
+                    :placeholder="t('ruleTree.condition.placeholder.text')"
                     @update:value="(v: string) => updateListFilterValue(v)"
                   />
                 </template>
@@ -435,9 +480,9 @@ const listFilterLiteralValue = computed(() => {
                 <n-cascader
                   :value="node.listFilter?.fieldPath"
                   :options="currentArrayFieldOption?.elementChildren ?? []"
-                  placeholder="选择字段"
+                  :placeholder="t('ruleTree.condition.placeholder.field')"
                   :size="size"
-                  class="!w-[140px]"
+                  class="auto-width"
                   :disabled="disabled"
                   check-strategy="child"
                   @update:value="updateListFilterField"
@@ -446,9 +491,9 @@ const listFilterLiteralValue = computed(() => {
                   v-if="selectedElementFieldType"
                   :value="node.listFilter?.comparator ?? ''"
                   :options="listFilterComparators"
-                  placeholder="操作符"
+                  :placeholder="t('ruleTree.condition.placeholder.operator')"
                   :size="size"
-                  class="!w-[80px]"
+                  class="auto-width"
                   :disabled="disabled"
                   @update:value="updateListFilterComparator"
                 />
@@ -467,7 +512,7 @@ const listFilterLiteralValue = computed(() => {
                     :size="size"
                     class="!w-[120px]"
                     :disabled="disabled"
-                    placeholder="文本…"
+                    :placeholder="t('ruleTree.condition.placeholder.text')"
                     @update:value="(v: string) => updateListFilterValue(v)"
                   />
                 </template>
@@ -503,11 +548,11 @@ const listFilterLiteralValue = computed(() => {
       </div>
       <div class="flex-1" />
       <div class="flex items-center gap-1">
-        <n-button class="action-btn" :size="size" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-xs" /></template>条件</n-button>
-        <n-button class="action-btn" :size="size" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-xs" /></template>分组</n-button>
+        <n-button class="action-btn" :size="size" :disabled="disabled" @click="handleAddCondition"><template #icon><span class="i-carbon:add text-14" /></template>{{ t('ruleTree.group.addCondition') }}</n-button>
+        <n-button class="action-btn" :size="size" :disabled="disabled" @click="handleAddGroup"><template #icon><span class="i-carbon:folder-add text-14" /></template>{{ t('ruleTree.group.addGroup') }}</n-button>
         <template v-if="level > 0">
           <div class="w-px h-4 mx-0.5 divider" />
-          <n-button :size="size" quaternary circle type="error" :disabled="disabled" @click="handleRemove"><template #icon><span class="i-carbon:trash-can text-sm" /></template></n-button>
+          <n-button :size="size" quaternary circle type="error" :disabled="disabled" @click="handleRemove"><template #icon><span class="i-carbon:trash-can text-14" /></template></n-button>
         </template>
       </div>
     </div>
@@ -523,8 +568,8 @@ const listFilterLiteralValue = computed(() => {
           </div>
         </template>
         <div v-else class="flex flex-col items-center justify-center py-6 rounded-md border border-dashed empty-state">
-          <span class="i-carbon:add-alt text-xl mb-1 icon-muted" />
-          <p class="text-[11px] text-placeholder">暂无条件，点击右上方按钮添加</p>
+          <span class="i-carbon:add-alt text-36 text-xl mb-1 icon-muted" />
+          <p class="text-[11px] text-placeholder">{{ t('ruleTree.group.empty') }}</p>
         </div>
       </div>
     </div>
@@ -615,6 +660,14 @@ const listFilterLiteralValue = computed(() => {
   border: 1px solid var(--expr-block-body-border);
   border-radius: 6px;
   min-height: 36px;
+}
+
+/* 自适应宽度下拉：最小宽度 + 随内容长度伸缩 */
+.auto-width {
+  width: max-content;
+  min-width: 90px;
+  max-width: 220px;
+  flex: 0 1 auto;
 }
 
 /* ─── Edit panel ───────────────────────────────────────────────── */

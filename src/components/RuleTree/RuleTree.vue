@@ -1,18 +1,31 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRuleTree } from '../../composables'
-import type { RuleTreeProps, RuleTreeEmits, RuleTreeInstance } from '../../types'
+import type { RuleTreeProps, RuleTreeEmits, RuleTreeInstance, SpelLocale } from '../../types'
 import RuleTreeNode from './RuleTreeNode.vue'
 import { NConfigProvider } from 'naive-ui'
 import { darkTheme, lightTheme } from 'naive-ui'
+import { provideSpelConfig, useNaiveLocales } from '../../locales'
 
 const props = withDefaults(defineProps<RuleTreeProps>(), {
   theme: 'light',
   size: 'small',
+  locale: 'zh',
+  localeFallback: 'zh',
 })
+
+provideSpelConfig({
+  locale: computed(() => props.locale as SpelLocale),
+  localeFallback: computed(() => props.localeFallback as SpelLocale),
+})
+
+const { naiveLocale, naiveDateLocale } = useNaiveLocales(computed(() => props.locale as SpelLocale))
 const emit = defineEmits<RuleTreeEmits>()
 
-const { getSpelExpression, setSpelExpression, addCondition, addGroup, removeNode, updateNode, validate } = useRuleTree(props, emit)
+const { getSpelExpression, setSpelExpression, addCondition, addGroup, removeNode, updateNode, validate } = useRuleTree(
+  props,
+  emit as (event: string, ...args: unknown[]) => void,
+)
 
 defineExpose<RuleTreeInstance>({
   getSpelExpression,
@@ -24,7 +37,7 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
 </script>
 
 <template>
-  <NConfigProvider :theme="currentTheme">
+  <NConfigProvider :theme="currentTheme" :locale="naiveLocale" :date-locale="naiveDateLocale">
     <div class="rule-tree-container" :class="[`theme--${props.theme}`, `size--${props.size}`]">
       <RuleTreeNode
         :node="modelValue"

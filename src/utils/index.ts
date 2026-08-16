@@ -18,7 +18,10 @@ export function validateSpelExpression(expression: string): { valid: boolean; er
   }
 }
 
-export function evalSpelExpression(expression: string, locals: Record<string, any>): any {
+export function evalSpelExpression(
+  expression: string,
+  locals: Record<string, unknown>,
+): unknown {
   try {
     spelService.setContext()
     return spelService.eval(expression, locals)
@@ -265,19 +268,19 @@ function tryParseSpecialCondition(expr: string): { field: string; comparator: st
 
   // isEmpty:  X == null || X.isEmpty()
   const isEmptyMatch = t.match(/^(.+?)\s*==\s*null\s*\|\|\s*\1\.isEmpty\(\)\s*$/)
-  if (isEmptyMatch) return { field: isEmptyMatch[1].trim(), comparator: 'isEmpty' }
+  if (isEmptyMatch) return { field: isEmptyMatch[1]!.trim(), comparator: 'isEmpty' }
 
   // isNotEmpty:  X != null && !X.isEmpty()
   const isNotEmptyMatch = t.match(/^(.+?)\s*!=\s*null\s*&&\s*!\1\.isEmpty\(\)\s*$/)
-  if (isNotEmptyMatch) return { field: isNotEmptyMatch[1].trim(), comparator: 'isNotEmpty' }
+  if (isNotEmptyMatch) return { field: isNotEmptyMatch[1]!.trim(), comparator: 'isNotEmpty' }
 
   // isNull:  X == null
   const isNullMatch = t.match(/^(.+?)\s*==\s*null\s*$/)
-  if (isNullMatch) return { field: isNullMatch[1].trim(), comparator: 'isNull' }
+  if (isNullMatch) return { field: isNullMatch[1]!.trim(), comparator: 'isNull' }
 
   // isNotNull:  X != null
   const isNotNullMatch = t.match(/^(.+?)\s*!=\s*null\s*$/)
-  if (isNotNullMatch) return { field: isNotNullMatch[1].trim(), comparator: 'isNotNull' }
+  if (isNotNullMatch) return { field: isNotNullMatch[1]!.trim(), comparator: 'isNotNull' }
 
   return null
 }
@@ -292,8 +295,8 @@ function tryParseListFilter(
   const filterMatch = t.match(/^(.+?)\.\?\[(.+)\]$/)
   if (!filterMatch) return null
 
-  const base = filterMatch[1].trim()
-  const condition = filterMatch[2].trim()
+  const base = filterMatch[1]!.trim()
+  const condition = filterMatch[2]!.trim()
 
   // 特殊条件
   if (condition.match(/^#this\s*==\s*null\s*\|\|\s*#this\.isEmpty\(\)$/))
@@ -308,51 +311,51 @@ function tryParseListFilter(
   // #this.field op value (对象元素: #this.code == 'admin')
   const fieldCond = condition.match(/^#this\.([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (fieldCond) {
-    const val = parseExpressionValue(fieldCond[3].trim())
+    const val = parseExpressionValue(fieldCond[3]!.trim())
     // 检测 null 比较 → 用 isNull/isNotNull
     if (val?.type === 'field' && val.path === 'null') {
       return {
         base,
-        listFilter: { comparator: fieldCond[2] === '==' ? 'isNull' : 'isNotNull', fieldPath: fieldCond[1].trim() },
+        listFilter: { comparator: fieldCond[2]! === '==' ? 'isNull' : 'isNotNull', fieldPath: fieldCond[1]!.trim() },
       }
     }
     return {
       base,
-      listFilter: { comparator: fieldCond[2], fieldPath: fieldCond[1].trim(), value: val || undefined },
+      listFilter: { comparator: fieldCond[2]!, fieldPath: fieldCond[1]!.trim(), value: val || undefined },
     }
   }
 
   // field op value (对象元素: code == 'admin', 无 #this. 前缀)
   const bareFieldCond = condition.match(/^([\w.]+)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (bareFieldCond) {
-    const val = parseExpressionValue(bareFieldCond[3].trim())
+    const val = parseExpressionValue(bareFieldCond[3]!.trim())
     // 检测 null 比较 → 用 isNull/isNotNull
     if (val?.type === 'field' && val.path === 'null') {
       return {
         base,
-        listFilter: { comparator: bareFieldCond[2] === '==' ? 'isNull' : 'isNotNull', fieldPath: bareFieldCond[1].trim() },
+        listFilter: { comparator: bareFieldCond[2]! === '==' ? 'isNull' : 'isNotNull', fieldPath: bareFieldCond[1]!.trim() },
       }
     }
     return {
       base,
-      listFilter: { comparator: bareFieldCond[2], fieldPath: bareFieldCond[1].trim(), value: val || undefined },
+      listFilter: { comparator: bareFieldCond[2]!, fieldPath: bareFieldCond[1]!.trim(), value: val || undefined },
     }
   }
 
   // #this op value (基本类型数组: #this == 'item1')
   const thisCond = condition.match(/^#this\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (thisCond) {
-    const val = parseExpressionValue(thisCond[2].trim())
+    const val = parseExpressionValue(thisCond[2]!.trim())
     // 检测 null 比较 → 用 isNull/isNotNull
     if (val?.type === 'field' && val.path === 'null') {
       return {
         base,
-        listFilter: { comparator: thisCond[1] === '==' ? 'isNull' : 'isNotNull' },
+        listFilter: { comparator: thisCond[1]! === '==' ? 'isNull' : 'isNotNull' },
       }
     }
     return {
       base,
-      listFilter: { comparator: thisCond[1], value: val || undefined },
+      listFilter: { comparator: thisCond[1]!, value: val || undefined },
     }
   }
 
@@ -387,10 +390,10 @@ function tryParseCountOperator(
   const t = expr.trim()
   const countMatch = t.match(/^(.+?)\.size\(\)\s+(==|!=|>=|<=|>|<)\s+(.+)$/)
   if (!countMatch) return null
-  const right = parseExpressionValue(countMatch[3].trim())
+  const right = parseExpressionValue(countMatch[3]!.trim())
   if (!right) return null
   return {
-    left: countMatch[1].trim(),
+    left: countMatch[1]!.trim(),
     comparator: `count ${countMatch[2]}`,
     right,
   }

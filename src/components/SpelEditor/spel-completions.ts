@@ -1,27 +1,30 @@
 import type { SpelEntry, ArrayMeta, ElementField } from './spel-types'
 import type { CustomMethod } from '../../types'
 
+export type TranslateFn = (key: string, values?: Record<string, string | number>) => string
+
 export function buildEntries(
-  authentication?: Record<string, any>,
-  principal?: Record<string, any>,
-  locals?: Record<string, any>,
+  authentication?: Record<string, unknown>,
+  principal?: Record<string, unknown>,
+  locals?: Record<string, unknown>,
   methods?: CustomMethod[],
+  t: TranslateFn = (key) => key,
 ): SpelEntry[] {
   const list: SpelEntry[] = []
   if (authentication) {
     list.push({
       label: 'authentication',
       type: 'variable',
-      detail: '用户认证信息',
-      desc: '存储当前登录用户的认证信息。',
+      detail: t('completions.authentication'),
+      desc: t('completions.authenticationDesc'),
       extra: 'authentication.name / authentication.roles',
     })
     for (const key of Object.keys(authentication)) {
       list.push({
         label: `authentication.${key}`,
         type: 'property',
-        detail: 'authentication 属性',
-        desc: `authentication 对象的 ${key} 属性`,
+        detail: t('completions.authenticationProperty'),
+        desc: `${t('completions.authenticationProperty')} ${key}`,
       })
       const val = authentication[key]
       if (val && typeof val === 'object' && !Array.isArray(val))
@@ -29,8 +32,8 @@ export function buildEntries(
           list.push({
             label: `authentication.${key}.${sub}`,
             type: 'property',
-            detail: '嵌套属性',
-            desc: `authentication.${key} 的 ${sub} 属性`,
+            detail: t('completions.nestedProperty'),
+            desc: `authentication.${key} ${t('completions.nestedProperty')} ${sub}`,
           })
     }
   }
@@ -38,16 +41,16 @@ export function buildEntries(
     list.push({
       label: 'principal',
       type: 'variable',
-      detail: '基础变量信息',
-      desc: '业务主体对象。',
+      detail: t('completions.principal'),
+      desc: t('completions.principalDesc'),
       extra: 'principal.id / principal.status',
     })
     for (const key of Object.keys(principal)) {
       list.push({
         label: `principal.${key}`,
         type: 'property',
-        detail: 'principal 属性',
-        desc: `principal 对象的 ${key} 属性`,
+        detail: t('completions.principalProperty'),
+        desc: `${t('completions.principalProperty')} ${key}`,
       })
       const val = principal[key]
       if (val && typeof val === 'object' && !Array.isArray(val))
@@ -55,8 +58,8 @@ export function buildEntries(
           list.push({
             label: `principal.${key}.${sub}`,
             type: 'property',
-            detail: '嵌套属性',
-            desc: `principal.${key} 的 ${sub} 属性`,
+            detail: t('completions.nestedProperty'),
+            desc: `principal.${key} ${t('completions.nestedProperty')} ${sub}`,
           })
     }
   }
@@ -65,8 +68,8 @@ export function buildEntries(
       list.push({
         label: `#${key}`,
         type: 'variable',
-        detail: 'locals 变量',
-        desc: '用户自定义本地变量。',
+        detail: t('completions.localsVariable'),
+        desc: t('completions.localsDesc'),
         extra: `#${key}`,
       })
       const val = locals[key]
@@ -75,60 +78,60 @@ export function buildEntries(
           list.push({
             label: `#${key}.${sub}`,
             type: 'property',
-            detail: `#${key} 属性`,
-            desc: `#${key} 的 ${sub} 属性`,
+            detail: `${t('completions.localsVariable')} ${key}`,
+            desc: `#${key} ${t('completions.nestedProperty')} ${sub}`,
           })
     }
   }
   ;[
-    { label: 'true', detail: '布尔值', desc: '布尔真值。', extra: 'principal.active == true' },
-    { label: 'false', detail: '布尔值', desc: '布尔假值。', extra: 'principal.deleted == false' },
-    { label: 'null', detail: '空值', desc: '表示空引用。', extra: 'principal.owner != null' },
-    { label: 'and', detail: '逻辑与', desc: '逻辑与 &&。', extra: 'a > 0 and b > 0' },
-    { label: 'or', detail: '逻辑或', desc: '逻辑或 ||。', extra: 'a == 1 or b == 1' },
-    { label: 'not', detail: '逻辑非', desc: '逻辑非 !。', extra: 'not principal.deleted' },
+    { label: 'true', detail: t('completions.booleanValue'), desc: t('completions.trueDesc'), extra: 'principal.active == true' },
+    { label: 'false', detail: t('completions.booleanValue'), desc: t('completions.falseDesc'), extra: 'principal.deleted == false' },
+    { label: 'null', detail: t('completions.null'), desc: t('completions.nullDesc'), extra: 'principal.owner != null' },
+    { label: 'and', detail: t('completions.logicalAnd'), desc: t('completions.andDesc'), extra: 'a > 0 and b > 0' },
+    { label: 'or', detail: t('completions.logicalOr'), desc: t('completions.orDesc'), extra: 'a == 1 or b == 1' },
+    { label: 'not', detail: t('completions.logicalNot'), desc: t('completions.notDesc'), extra: 'not principal.deleted' },
   ].forEach((k) => list.push({ ...k, type: 'keyword' as const }))
   ;[
     {
       label: 'contains',
-      detail: '包含判断',
-      desc: '字符串或集合包含判断。',
+      detail: t('completions.containsMethod'),
+      desc: t('completions.containsDesc'),
       extra: "principal.name.contains('admin')",
     },
     {
       label: 'startsWith',
-      detail: '前缀匹配',
-      desc: '字符串前缀匹配。',
+      detail: t('completions.startsWithMethod'),
+      desc: t('completions.startsWithDesc'),
       extra: "principal.code.startsWith('ORD')",
     },
     {
       label: 'endsWith',
-      detail: '后缀匹配',
-      desc: '字符串后缀匹配。',
+      detail: t('completions.endsWithMethod'),
+      desc: t('completions.endsWithDesc'),
       extra: "principal.file.endsWith('.pdf')",
     },
     {
       label: 'matches',
-      detail: '正则匹配',
-      desc: '正则表达式匹配。',
+      detail: t('completions.matches'),
+      desc: t('completions.matchesDesc'),
       extra: "principal.phone.matches('1[3-9]\\\\\\\\d{9}')",
     },
     {
       label: 'isEmpty',
-      detail: '判断为空',
-      desc: '字符串或集合长度是否为 0。',
+      detail: t('completions.isEmpty'),
+      desc: t('completions.isEmptyDesc'),
       extra: 'principal.tags.isEmpty()',
     },
     {
       label: 'size()',
-      detail: '集合长度',
-      desc: '返回集合的元素数量。',
+      detail: t('completions.size'),
+      desc: t('completions.sizeDesc'),
       extra: 'principal.items.size() > 0',
     },
     {
       label: 'length()',
-      detail: '字符串长度',
-      desc: '返回字符串的字符数量。',
+      detail: t('completions.length'),
+      desc: t('completions.lengthDesc'),
       extra: 'principal.name.length() > 2',
     },
   ].forEach((f) => list.push({ ...f, type: 'function' as const }))
@@ -138,7 +141,7 @@ export function buildEntries(
       list.push({
         label: m.name,
         type: 'function' as const,
-        detail: '自定义方法',
+        detail: t('completions.customMethod'),
         desc: m.description ?? '',
         extra: `${m.name}(${args})`,
         insert: `${m.name}(`,
@@ -149,17 +152,18 @@ export function buildEntries(
 }
 
 export function buildTypeMap(
-  authentication?: Record<string, any>,
-  principal?: Record<string, any>,
-  locals?: Record<string, any>,
+  authentication?: Record<string, unknown>,
+  principal?: Record<string, unknown>,
+  locals?: Record<string, unknown>,
   _methods?: CustomMethod[],
 ): Record<string, string> {
   const map: Record<string, string> = {}
-  function walk(obj: any, prefix: string) {
+  function walk(obj: unknown, prefix: string) {
     if (!obj || typeof obj !== 'object') return
-    for (const key of Object.keys(obj)) {
+    const record = obj as Record<string, unknown>
+    for (const key of Object.keys(record)) {
       const fp = prefix ? `${prefix}.${key}` : key
-      const val = obj[key]
+      const val = record[key]
       if (val === null || val === undefined) map[fp] = 'null'
       else if (Array.isArray(val)) map[fp] = 'array'
       else if (typeof val === 'object') {
@@ -185,10 +189,11 @@ export function buildTypeMap(
   return map
 }
 
-export function buildElementFields(obj: any): ElementField[] {
+export function buildElementFields(obj: unknown): ElementField[] {
   if (!obj || typeof obj !== 'object') return []
-  return Object.keys(obj).map((key) => {
-    const val = obj[key]
+  const record = obj as Record<string, unknown>
+  return Object.keys(record).map((key) => {
+    const val = record[key]
     const f: ElementField = { label: key, value: key, type: 'null' }
     if (val === null || val === undefined) f.type = 'null'
     else if (Array.isArray(val)) {
@@ -207,16 +212,17 @@ export function buildElementFields(obj: any): ElementField[] {
 }
 
 export function buildArrayMeta(
-  authentication?: Record<string, any>,
-  principal?: Record<string, any>,
-  locals?: Record<string, any>,
+  authentication?: Record<string, unknown>,
+  principal?: Record<string, unknown>,
+  locals?: Record<string, unknown>,
 ): Record<string, ArrayMeta> {
   const meta: Record<string, ArrayMeta> = {}
-  function walkArr(obj: any, prefix: string) {
+  function walkArr(obj: unknown, prefix: string) {
     if (!obj || typeof obj !== 'object') return
-    for (const key of Object.keys(obj)) {
+    const record = obj as Record<string, unknown>
+    for (const key of Object.keys(record)) {
       const fp = prefix ? `${prefix}.${key}` : key
-      const val = obj[key]
+      const val = record[key]
       if (Array.isArray(val)) {
         if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null)
           meta[fp] = { elementType: 'object', elementFields: buildElementFields(val[0]) }
@@ -242,116 +248,116 @@ export function buildArrayMeta(
   return meta
 }
 
-export function buildStringMethodEntries(): SpelEntry[] {
+export function buildStringMethodEntries(t: TranslateFn = (key) => key): SpelEntry[] {
   return [
     {
       label: 'length',
       type: 'property',
-      detail: '字符串长度',
-      desc: '返回字符串的字符数量。',
+      detail: t('completions.length'),
+      desc: t('completions.lengthDesc'),
       extra: 'principal.name.length',
     },
     {
       label: 'isEmpty()',
       type: 'function',
-      detail: '判断为空',
-      desc: '判断长度是否为 0。',
+      detail: t('completions.isEmpty'),
+      desc: t('completions.isEmptyDesc'),
       extra: 'principal.name.isEmpty()',
     },
     {
       label: 'toUpperCase()',
       type: 'function',
-      detail: '转大写',
-      desc: '将字符串转换为大写。',
+      detail: t('completions.toUpperCase'),
+      desc: t('completions.toUpperCaseDesc'),
       extra: 'principal.name.toUpperCase()',
     },
     {
       label: 'toLowerCase()',
       type: 'function',
-      detail: '转小写',
-      desc: '将字符串转换为小写。',
+      detail: t('completions.toLowerCase'),
+      desc: t('completions.toLowerCaseDesc'),
       extra: 'principal.name.toLowerCase()',
     },
     {
       label: 'trim()',
       type: 'function',
-      detail: '去除空格',
-      desc: '去除字符串首尾空白字符。',
+      detail: t('completions.trim'),
+      desc: t('completions.trimDesc'),
       extra: 'principal.name.trim()',
     },
     {
       label: 'substring(x)',
       type: 'function',
-      detail: '子串截取(1参)',
-      desc: '从指定位置截取。',
+      detail: t('completions.substring1'),
+      desc: t('completions.substring1Desc'),
       extra: 'principal.name.substring(3)',
     },
     {
       label: 'substring(x,y)',
       type: 'function',
-      detail: '子串截取(2参)',
-      desc: '从起始截取到结束。',
+      detail: t('completions.substring2'),
+      desc: t('completions.substring2Desc'),
       extra: 'principal.name.substring(0, 3)',
     },
     {
       label: 'replace(x,y)',
       type: 'function',
-      detail: '字符串替换',
-      desc: '替换字符。',
+      detail: t('completions.replace'),
+      desc: t('completions.replaceDesc'),
       extra: "principal.name.replace('old', 'new')",
     },
     {
       label: 'startsWith(x)',
       type: 'function',
-      detail: '前缀匹配',
-      desc: '是否以指定前缀开头。',
+      detail: t('completions.startsWithMethod'),
+      desc: t('completions.startsWithDesc'),
       extra: "principal.code.startsWith('ORD')",
     },
     {
       label: 'endsWith(x)',
       type: 'function',
-      detail: '后缀匹配',
-      desc: '是否以指定后缀结尾。',
+      detail: t('completions.endsWithMethod'),
+      desc: t('completions.endsWithDesc'),
       extra: "principal.file.endsWith('.pdf')",
     },
     {
       label: 'contains(x)',
       type: 'function',
-      detail: '包含判断',
-      desc: '是否包含指定子串。',
+      detail: t('completions.containsMethod'),
+      desc: t('completions.containsDesc'),
       extra: "principal.name.contains('value')",
     },
     {
       label: 'indexOf(x)',
       type: 'function',
-      detail: '查找索引',
-      desc: '返回首次位置。',
+      detail: t('completions.indexOf'),
+      desc: t('completions.indexOfDesc'),
       extra: "principal.name.indexOf('a')",
     },
     {
       label: 'charAt(x)',
       type: 'function',
-      detail: '获取字符',
-      desc: '返回指定位置字符。',
+      detail: t('completions.charAt'),
+      desc: t('completions.charAtDesc'),
       extra: 'principal.name.charAt(0)',
     },
   ]
 }
 
-export function buildArrayMethodEntries(am?: ArrayMeta): SpelEntry[] {
+export function buildArrayMethodEntries(am?: ArrayMeta, t: TranslateFn = (key) => key): SpelEntry[] {
   const r: SpelEntry[] = [
     {
       label: 'size()',
       type: 'function',
-      detail: '集合大小',
-      desc: '返回数组元素数量。',
+      detail: t('completions.arraySize'),
+      desc: t('completions.arraySizeDesc'),
       extra: '...roles.size() > 0',
     },
     {
       label: 'contains(x)',
       type: 'function',
-      detail: '包含判断',
-      desc: '数组是否包含指定元素。',
+      detail: t('completions.arrayContains'),
+      desc: t('completions.arrayContainsDesc'),
       extra: "...roles.contains('admin')",
     },
   ]
@@ -359,38 +365,38 @@ export function buildArrayMethodEntries(am?: ArrayMeta): SpelEntry[] {
     r.push({
       label: '?[field == x]',
       type: 'function',
-      detail: '过滤-对象数组',
-      desc: `可用字段：${am.elementFields.map((f) => f.label).join(', ')}`,
+      detail: t('completions.filterObjectArray'),
+      desc: t('completions.filterObjectArrayDesc', { fields: am.elementFields.map((f) => f.label).join(', ') }),
       extra: `...roles.?[${am.elementFields[0]?.label ?? 'field'} == value]`,
     })
     r.push({
       label: '![field]',
       type: 'function',
-      detail: '投影-提取字段',
-      desc: '从对象数组中提取指定字段。',
+      detail: t('completions.projectField'),
+      desc: t('completions.projectFieldDesc'),
       extra: '...roles.![code]',
     })
     for (const f of am.elementFields)
       r.push({
         label: `[0].${f.label}`,
         type: 'property',
-        detail: '数组元素字段',
-        desc: `元素 ${f.label}，类型 ${f.type}`,
+        detail: t('completions.arrayElementField'),
+        desc: t('completions.arrayElementFieldDesc', { label: f.label, type: f.type }),
         extra: `...roles[0].${f.label}`,
       })
   } else {
     r.push({
       label: '?[#this == x]',
       type: 'function',
-      detail: '过滤-基本类型数组',
-      desc: `元素类型: ${am?.elementType ?? 'string'}`,
+      detail: t('completions.filterBaseArray'),
+      desc: t('completions.filterBaseArrayDesc', { type: am?.elementType ?? 'string' }),
       extra: "...roles.?[#this == 'value']",
     })
   }
   return r
 }
 
-export function buildFilterFieldEntries(fields: ElementField[], prefix = ''): SpelEntry[] {
+export function buildFilterFieldEntries(fields: ElementField[], prefix = '', t: TranslateFn = (key) => key): SpelEntry[] {
   return fields.map((f) => ({
     label: f.label,
     type: 'property' as const,
@@ -402,10 +408,10 @@ export function buildFilterFieldEntries(fields: ElementField[], prefix = ''): Sp
           : f.type,
     desc:
       f.type === 'object'
-        ? `对象 ${f.label}`
+        ? t('completions.objectDesc', { label: f.label })
         : f.type === 'array'
-          ? `数组 ${f.label}`
-          : `字段 ${f.label}`,
+          ? t('completions.arrayDesc', { label: f.label })
+          : t('completions.fieldDesc', { label: f.label }),
     extra: `...?[${prefix ? `${prefix}.` : ''}${f.label} ...]`,
   }))
 }

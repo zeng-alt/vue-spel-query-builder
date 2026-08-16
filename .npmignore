@@ -5,9 +5,12 @@ playground/
 # Config files
 vite.config.ts
 vite.lib.config.ts
+vitest.config.ts
 tsconfig.json
 tsconfig.node.json
 tsconfig.app.json
+tsconfig.lib.json
+tsconfig.vitest.json
 uno.config.ts
 
 # Development files
@@ -23,10 +26,10 @@ coverage/
 
 # Build tools
 .github/
-.eslintrc.cjs
+eslint.config.ts
 .eslintcache
 .prettierrc.json
-oxlint.json
+.oxlintrc.json
 
 # Git
 .git/

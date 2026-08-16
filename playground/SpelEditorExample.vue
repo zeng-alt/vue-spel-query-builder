@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, watch, inject } from 'vue'
-import { SpelEditor } from '../src'
-import type { SpelEditorInstance, CustomMethod } from '../src'
+import { SpelEditor } from '@zeng-alt/vue-spel-query-builder'
+import type { SpelEditorInstance, CustomMethod } from '@zeng-alt/vue-spel-query-builder'
 
 const playgroundTheme = inject<import('vue').Ref<'light' | 'dark'>>('playgroundTheme')!
-const playgroundSize = inject<import('vue').Ref<import('../src').ComponentSize>>('playgroundSize')!
+const playgroundSize = inject<import('vue').Ref<import('@zeng-alt/vue-spel-query-builder').ComponentSize>>('playgroundSize')!
 
 const spelExpression = ref('authentication.details.name')
 
@@ -88,7 +88,7 @@ watch(localsText, (val) => {
   }
 })
 
-const runResult = ref<{ result?: any; error?: string }>()
+const runResult = ref<{ result?: unknown; error?: string }>()
 
 const handleValidate = (isValid: boolean, error?: string) => {
   console.log('Validation result:', { isValid, error })
@@ -98,7 +98,7 @@ const handleChange = (value: string) => {
   console.log('Expression changed:', value)
 }
 
-const handleRun = (result: any, error?: string) => {
+const handleRun = (result: unknown, error?: string) => {
   runResult.value = { result, error }
   console.log('Run result:', { result, error })
 }
@@ -124,14 +124,14 @@ const handleRunClick = async () => {
   }
 }
 
-const getResultType = (result: any): string => {
+const getResultType = (result: unknown): string => {
   if (result === null) return 'null'
   if (result === undefined) return 'undefined'
   if (Array.isArray(result)) return 'array'
   return typeof result
 }
 
-const formatResult = (result: any): string => {
+const formatResult = (result: unknown): string => {
   if (result === null) return 'null'
   if (result === undefined) return 'undefined'
   if (typeof result === 'object') {
@@ -517,51 +517,12 @@ const formatResult = (result: any): string => {
 }
 
 .plain-textarea::-webkit-resizer {
-  position: absolute;
-  width: 100%;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
-  border: none;
-  cursor: ns-resize;
-  bottom: 0;
-  left: 0;
+  background: linear-gradient(135deg, transparent 50%, var(--border-secondary) 50%);
+  border-radius: 0 0 6px 0;
 }
 
-.plain-textarea::-webkit-resizer::before {
-  content: '';
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  background: var(--border-secondary);
-  border-radius: 2px;
-  transition: all 0.2s;
-}
-
-.plain-textarea::-webkit-resizer::after {
-  content: '';
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  background: var(--border-secondary);
-  border-radius: 2px;
-  opacity: 0.5;
-  transition: all 0.2s;
-}
-
-.plain-textarea:hover::-webkit-resizer::before {
-  background: var(--accent-cyan);
-  height: 5px;
-}
-
-.plain-textarea:hover::-webkit-resizer::after {
-  background: var(--accent-cyan);
-  opacity: 0.7;
+.plain-textarea:hover::-webkit-resizer {
+  background: linear-gradient(135deg, transparent 50%, var(--accent-cyan) 50%);
 }
 
 @media (max-width: 768px) {

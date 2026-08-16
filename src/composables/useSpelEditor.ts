@@ -2,8 +2,13 @@ import { ref, watch, computed } from 'vue'
 import { spelService } from '../spel-service'
 import { validateSpelExpression } from '../utils'
 import type { SpelEditorProps } from '../types'
+import { useSpelI18n } from './useSpelI18n'
 
-export function useSpelEditor(props: SpelEditorProps, emit: any) {
+export function useSpelEditor(
+  props: SpelEditorProps,
+  emit: (event: string, ...args: unknown[]) => void,
+) {
+  const { t } = useSpelI18n(props)
   const internalValue = ref(props.modelValue)
   const isFocused = ref(false)
   const validation = ref<{ valid: boolean; error?: string }>({ valid: true })
@@ -27,7 +32,7 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
     return validation.value.valid
   }
 
-  const run = async (): Promise<any> => {
+  const run = async (): Promise<unknown> => {
     try {
       const expression = internalValue.value
       spelService.setContext(props.authentication, props.principal)
@@ -37,7 +42,7 @@ export function useSpelEditor(props: SpelEditorProps, emit: any) {
       emit('run', result, undefined)
       return result
     } catch (error) {
-      const errorMessage = getErrorMessage(error) || '执行表达式时发生错误'
+      const errorMessage = getErrorMessage(error) || t('error.runExpression')
       emit('run', undefined, errorMessage)
       return undefined
     }

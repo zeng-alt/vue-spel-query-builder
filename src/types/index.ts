@@ -1,4 +1,5 @@
 export type ComponentSize = 'tiny' | 'small' | 'medium' | 'large'
+export type SpelLocale = 'zh' | 'en'
 
 export interface CustomMethodParam {
   name: string
@@ -11,27 +12,30 @@ export interface CustomMethod {
   params?: CustomMethodParam[]
   returnType?: string
   description?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fn?: (...args: any[]) => any
 }
 
 export interface SpelEditorProps {
   modelValue: string
-  authentication?: Record<string, any>
-  principal?: Record<string, any>
-  locals?: Record<string, any>
+  authentication?: Record<string, unknown>
+  principal?: Record<string, unknown>
+  locals?: Record<string, unknown>
   methods?: CustomMethod[]
   disabled?: boolean
   readonly?: boolean
   height?: string | number
   theme?: 'dark' | 'light'
   size?: ComponentSize
+  locale?: SpelLocale
+  localeFallback?: SpelLocale
 }
 
 export interface SpelEditorEmits {
   (e: 'update:modelValue', value: string): void
   (e: 'change', value: string): void
   (e: 'validate', isValid: boolean, error?: string): void
-  (e: 'run', result: any, error?: string): void
+  (e: 'run', result: unknown, error?: string): void
 }
 
 // ─── Function Argument ───────────────────────────────────────────────────────
@@ -116,13 +120,15 @@ export interface RuleNode {
 
 export interface RuleTreeProps {
   modelValue: RuleNode
-  authentication?: Record<string, any>
-  principal?: Record<string, any>
-  locals?: Record<string, any>
+  authentication?: Record<string, unknown>
+  principal?: Record<string, unknown>
+  locals?: Record<string, unknown>
   methods?: CustomMethod[]
   disabled?: boolean
   theme?: 'light' | 'dark'
   size?: ComponentSize
+  locale?: SpelLocale
+  localeFallback?: SpelLocale
 }
 
 export interface RuleTreeEmits {
@@ -146,7 +152,7 @@ export interface SpelEditorInstance {
   getValue: () => string
   setValue: (value: string) => void
   validate: () => Promise<boolean>
-  run: () => Promise<any>
+  run: () => Promise<unknown>
   focus: () => void
 }
 
