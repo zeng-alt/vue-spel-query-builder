@@ -1,3 +1,5 @@
+[中文](./README.md) | [English](./README.en.md)
+
 # Vue SpEL Query Builder
 
 Vue 3 SpEL（Spring Expression Language）查询构建器 - 提供在线编辑器与可视化规则树双模式，支持通过代码或可视化界面构建 SpEL 布尔表达式。
