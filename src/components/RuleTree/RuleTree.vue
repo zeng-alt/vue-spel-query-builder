@@ -34,11 +34,14 @@ defineExpose<RuleTreeInstance>({
 })
 
 const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTheme)
+
+// 容器内边距（替代原 .rule-tree-container.size--* 规则）
+const sizePad = computed(() => ({ tiny: 'p-2', small: 'p-3', medium: 'p-5', large: 'p-7' })[props.size])
 </script>
 
 <template>
   <NConfigProvider :theme="currentTheme" :locale="naiveLocale" :date-locale="naiveDateLocale">
-    <div class="rule-tree-container" :class="[`theme--${props.theme}`, `size--${props.size}`]">
+    <div class="rule-tree-container rounded-[8px] min-h-[200px] transition-colors duration-200" :class="[`theme--${props.theme}`, sizePad]">
       <RuleTreeNode
         :node="modelValue"
         :authentication="authentication"
@@ -59,16 +62,6 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
 </template>
 
 <style scoped>
-/* ===================================================================
-   Container
-   =================================================================== */
-.rule-tree-container {
-  padding: 16px;
-  border-radius: 8px;
-  min-height: 200px;
-  transition: background 0.2s, border-color 0.2s;
-}
-
 /* ===================================================================
    CSS Custom Properties — Light & Dark themes
    Defined at the root container so all descendants inherit the correct values.
@@ -121,7 +114,7 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
   --op-toggle-btn-border: #e5e7eb;
   --op-toggle-btn-hover-bg: #f9fafb;
   --op-toggle-btn-hover-fg: #374151;
-  --op-toggle-and-bg: #1d4ed8;
+  --op-toggle-and-bg: #18a058;
   --op-toggle-or-bg: #d97706;
   --op-toggle-not-bg: #dc2626;
   --op-toggle-active-fg: #ffffff;
@@ -182,7 +175,7 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
   --op-toggle-btn-border: #3e3e5c;
   --op-toggle-btn-hover-bg: #2e2e52;
   --op-toggle-btn-hover-fg: #e5e5e5;
-  --op-toggle-and-bg: #2563eb;
+  --op-toggle-and-bg: #63e2b7;
   --op-toggle-or-bg: #d97706;
   --op-toggle-not-bg: #dc2626;
   --op-toggle-active-fg: #ffffff;
@@ -194,10 +187,4 @@ const currentTheme = computed(() => props.theme === 'dark' ? darkTheme : lightTh
 
   --divider-bg: #3e3e5c;
 }
-
-/* ─── Size variants ────────────────────────────────────────────── */
-.rule-tree-container.size--tiny { padding: 8px; }
-.rule-tree-container.size--small { padding: 12px; }
-.rule-tree-container.size--medium { padding: 20px; }
-.rule-tree-container.size--large { padding: 28px; }
 </style>

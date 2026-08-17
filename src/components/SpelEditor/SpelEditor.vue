@@ -36,6 +36,30 @@ const cl = (m: Record<string, string>) => computed(() => m[sz.value] ?? m.small 
 const hPC = cl({ tiny: 'px-2 py-1', small: 'px-4 py-2', medium: 'px-5 py-2.5', large: 'px-6 py-3' })
 const hTC = cl({ tiny: 'text-xs', small: 'text-sm', medium: 'text-base', large: 'text-lg' })
 
+// CodeMirror 内部元素样式（替代原 .size--* :deep 规则）
+const cm = computed(() => ({
+  tiny: {
+    content: '[&_.cm-content]:!p-[8px]',
+    gutters: '[&_.cm-gutters]:!min-w-[36px]',
+    line: '[&_.cm-lineNumbers_.cm-gutterElement]:text-[10px] [&_.cm-lineNumbers_.cm-gutterElement]:!px-1.5',
+  },
+  small: {
+    content: '[&_.cm-content]:!p-[12px]',
+    gutters: '[&_.cm-gutters]:!min-w-[48px]',
+    line: '',
+  },
+  medium: {
+    content: '[&_.cm-content]:!p-[16px]',
+    gutters: '[&_.cm-gutters]:!min-w-[52px]',
+    line: '',
+  },
+  large: {
+    content: '[&_.cm-content]:!p-[20px]',
+    gutters: '[&_.cm-gutters]:!min-w-[56px]',
+    line: '',
+  },
+})[sz.value])
+
 const cStyle = computed(() => {
   if (typeof props.height === 'number') return { height: `${props.height}px` }
   if (props.height) return { height: props.height }
@@ -185,8 +209,8 @@ defineExpose<SpelEditorInstance>({ getValue, setValue, validate: handleValidate,
 </script>
 
 <template>
-  <div class="spel-editor-wrap rounded-lg overflow-hidden shadow-lg"
-    :class="[isDark ? 'border-gray-700' : 'border-gray-200', `size--${sz}`]"
+  <div class="rounded-lg overflow-hidden shadow-lg flex flex-col"
+    :class="[isDark ? 'border-gray-700' : 'border-gray-200']"
     :style="[cStyle, { borderWidth: '1px', borderStyle: 'solid' }]">
     <div class="flex items-center justify-between select-none" :class="hPC"
       :style="{ background: `linear-gradient(to right, ${T.headerFrom}, ${T.headerTo})` }">
@@ -201,8 +225,16 @@ defineExpose<SpelEditorInstance>({ getValue, setValue, validate: handleValidate,
         <span class="w-2.5 h-2.5 rounded-full bg-green-400/80"/>
       </span>
     </div>
-    <div ref="cmRef" class="spel-cm-wrap" />
-    <Transition name="spel-err">
+    <div ref="cmRef"
+      class="flex-1 overflow-hidden [&_.cm-editor]:h-full [&_.cm-editor.cm-focused]:[outline:none] [&_.cm-scroller]:overflow-auto"
+      :class="[cm.content, cm.gutters, cm.line]" />
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-y-1"
+      leave-active-class="transition-all duration-200 ease-out"
+      leave-from-class=""
+      leave-to-class="opacity-0 -translate-y-1"
+    >
       <div v-if="!validation.valid" class="flex items-center gap-2 px-4 py-2 text-sm border-t"
         :style="{ background: T.errBg, borderColor: T.errBorder, color: T.errFg }">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,22 +244,3 @@ defineExpose<SpelEditorInstance>({ getValue, setValue, validate: handleValidate,
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.spel-editor-wrap { display:flex; flex-direction:column; }
-.spel-cm-wrap { flex:1; overflow:hidden; }
-:deep(.cm-editor) { height:100%; }
-:deep(.cm-editor.cm-focused) { outline:none; }
-:deep(.cm-scroller) { overflow:auto; }
-.spel-err-enter-active,.spel-err-leave-active { transition:all .2s ease; }
-.spel-err-enter-from,.spel-err-leave-to { opacity:0; transform:translateY(-4px); }
-.size--tiny :deep(.cm-content) { padding:8px !important; }
-.size--small :deep(.cm-content) { padding:12px !important; }
-.size--medium :deep(.cm-content) { padding:16px !important; }
-.size--large :deep(.cm-content) { padding:20px !important; }
-.size--tiny :deep(.cm-gutters) { min-width:36px; }
-.size--tiny :deep(.cm-lineNumbers .cm-gutterElement) { font-size:10px; padding:0 6px; }
-.size--small :deep(.cm-gutters) { min-width:48px; }
-.size--medium :deep(.cm-gutters) { min-width:52px; }
-.size--large :deep(.cm-gutters) { min-width:56px; }
-</style>

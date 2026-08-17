@@ -113,14 +113,17 @@ export function ruleNodeToSpel(node: RuleNode): string {
 
     if (childExps.length === 0) return ''
 
+    // 兼容旧数据：operator === 'not' 视为 negate
+    const negate = node.negate === true || node.operator === 'not'
+
     if (childExps.length === 1) {
-      return node.operator === 'not' ? `!(${childExps[0]})` : childExps[0] || ''
+      return negate ? `!(${childExps[0]})` : childExps[0] || ''
     }
 
     const separator = node.operator === 'or' ? ' || ' : ' && '
     const combined = `(${childExps.join(separator)})`
 
-    return node.operator === 'not' ? `!${combined}` : combined
+    return negate ? `!${combined}` : combined
   }
 
   return ''
@@ -528,10 +531,15 @@ function parseGroup(expr: string): RuleNode {
     }
     if (matched && depth === 0) {
       const child = parseGroup(inner)
+      if (child.type === 'group') {
+        // 取反叠加到内部组（且/或保留），如 !(A && B) → and + negate
+        return { ...child, id: generateId(), negate: !child.negate }
+      }
       return {
         id: generateId(),
         type: 'group',
-        operator: 'not',
+        operator: 'and',
+        negate: true,
         children: [child],
       }
     }

@@ -104,6 +104,7 @@ export interface RuleNode {
 
   // ── Group-only ──────────────────────────────────────────────────────────
   operator?: LogicalOperator
+  negate?: boolean // 分组取反（非），可与 operator(且/或) 叠加
   children?: RuleNode[]
 
   // 条件左侧表达式（必有）
