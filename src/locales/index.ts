@@ -7,22 +7,21 @@ import {
 } from 'naive-ui'
 import zhMessages from './zh.json'
 import enMessages from './en.json'
+import type { SpelLocale, SpelMessages } from '../types'
 
-export type SpelLocale = 'zh' | 'en'
+export type { SpelLocale, SpelMessages } from '../types'
+
+export type Messages = Record<string, unknown>
 
 export interface SpelConfigContext {
   locale: Ref<SpelLocale>
   localeFallback: Ref<SpelLocale>
+  messages?: Ref<SpelMessages | undefined>
 }
 
 export const spelConfigInjectionKey: InjectionKey<SpelConfigContext> = Symbol('spelConfig')
 
-interface Messages {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any
-}
-
-const defaultMessages: Record<SpelLocale, Messages> = {
+const defaultMessages: Record<string, Messages> = {
   zh: zhMessages,
   en: enMessages,
 }
@@ -46,8 +45,26 @@ export function setLocaleFallback(locale: SpelLocale): void {
   globalFallback.value = locale
 }
 
-export function setLocaleMessages(locale: SpelLocale, messages: Messages): void {
-  defaultMessages[locale] = { ...defaultMessages[locale], ...messages }
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v)
+}
+
+function deepMerge(base: Record<string, unknown>, override: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...base }
+  for (const key of Object.keys(override)) {
+    const baseVal = base[key]
+    const ovVal = override[key]
+    result[key] = isPlainObject(baseVal) && isPlainObject(ovVal) ? deepMerge(baseVal, ovVal) : ovVal
+  }
+  return result
+}
+
+/**
+ * 扩展/覆盖语言包（深合并，支持任意自定义 locale 名）
+ * 例：setLocaleMessages('custom', { ruleTree: { group: { addCondition: 'Add Condition' } } })
+ */
+export function setLocaleMessages(locale: string, messages: Messages): void {
+  defaultMessages[locale] = deepMerge(defaultMessages[locale] ?? {}, messages) as Messages
 }
 
 export function getLocale(): SpelLocale {
@@ -77,13 +94,17 @@ export function t(
   values?: Record<string, string | number>,
   locale?: SpelLocale,
   fallback?: SpelLocale,
+  extraMessages?: SpelMessages,
 ): string {
   const loc = locale ?? globalLocale.value
   const fb = fallback ?? globalFallback.value
-  let raw = getValue(defaultMessages[loc], key)
-  if (raw === undefined && fb !== loc) raw = getValue(defaultMessages[fb], key)
+  const merged = deepMerge(defaultMessages[loc] ?? {}, (extraMessages?.[loc] ?? {}) as Record<string, unknown>)
+  let raw = getValue(merged, key)
+  if (raw === undefined && fb !== loc) {
+    const mergedFb = deepMerge(defaultMessages[fb] ?? {}, (extraMessages?.[fb] ?? {}) as Record<string, unknown>)
+    raw = getValue(mergedFb, key)
+  }
   if (typeof raw !== 'string') {
-     
     console.warn(`[vue-spel-query-builder] i18n key not found: ${key}`)
     return key
   }
@@ -91,11 +112,11 @@ export function t(
 }
 
 export function resolveNaiveLocale(locale: SpelLocale) {
-  return locale === 'en' ? naiveEnUS : naiveZhCN
+  return locale === 'zh' ? naiveZhCN : naiveEnUS
 }
 
 export function resolveNaiveDateLocale(locale: SpelLocale) {
-  return locale === 'en' ? naiveDateEnUS : naiveDateZhCN
+  return locale === 'zh' ? naiveDateZhCN : naiveDateEnUS
 }
 
 export function useNaiveLocales(locale?: Ref<SpelLocale>) {

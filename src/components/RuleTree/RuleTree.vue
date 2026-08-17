@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRuleTree } from '../../composables'
-import type { RuleTreeProps, RuleTreeEmits, RuleTreeInstance, SpelLocale } from '../../types'
+import type { RuleTreeProps, RuleTreeEmits, RuleTreeInstance } from '../../types'
 import RuleTreeNode from './RuleTreeNode.vue'
 import { NConfigProvider } from 'naive-ui'
 import { darkTheme, lightTheme } from 'naive-ui'
@@ -15,11 +15,12 @@ const props = withDefaults(defineProps<RuleTreeProps>(), {
 })
 
 provideSpelConfig({
-  locale: computed(() => props.locale as SpelLocale),
-  localeFallback: computed(() => props.localeFallback as SpelLocale),
+  locale: computed(() => props.locale),
+  localeFallback: computed(() => props.localeFallback),
+  messages: computed(() => props.messages),
 })
 
-const { naiveLocale, naiveDateLocale } = useNaiveLocales(computed(() => props.locale as SpelLocale))
+const { naiveLocale, naiveDateLocale } = useNaiveLocales(computed(() => props.locale))
 const emit = defineEmits<RuleTreeEmits>()
 
 const { getSpelExpression, setSpelExpression, addCondition, addGroup, removeNode, updateNode, validate } = useRuleTree(

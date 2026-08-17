@@ -1,5 +1,11 @@
 export type ComponentSize = 'tiny' | 'small' | 'medium' | 'large'
-export type SpelLocale = 'zh' | 'en'
+// 内置 'zh' | 'en'，也支持用户自定义 locale 名（配合 setLocaleMessages 使用）
+export type SpelLocale = 'zh' | 'en' | (string & {})
+
+// 语言包消息映射：locale 名 → 嵌套消息对象，可对内置语言包做扩展/覆盖
+export interface SpelMessages {
+  [locale: string]: Record<string, unknown>
+}
 
 export interface CustomMethodParam {
   name: string
@@ -29,6 +35,7 @@ export interface SpelEditorProps {
   size?: ComponentSize
   locale?: SpelLocale
   localeFallback?: SpelLocale
+  messages?: SpelMessages
 }
 
 export interface SpelEditorEmits {
@@ -130,6 +137,7 @@ export interface RuleTreeProps {
   size?: ComponentSize
   locale?: SpelLocale
   localeFallback?: SpelLocale
+  messages?: SpelMessages
 }
 
 export interface RuleTreeEmits {

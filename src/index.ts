@@ -14,6 +14,7 @@ export type {
   Comparator,
   ComponentSize,
   SpelLocale,
+  SpelMessages,
 } from './types'
 export { useSpelEditor, useRuleTree, useSpelI18n } from './composables'
 export {
@@ -44,5 +45,6 @@ export {
   provideSpelConfig,
   useSpelConfig,
   type SpelConfigContext,
+  type Messages,
 } from './locales'
 

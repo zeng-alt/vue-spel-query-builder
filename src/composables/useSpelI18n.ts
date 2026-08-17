@@ -7,11 +7,13 @@ import {
   resolveNaiveLocale,
   resolveNaiveDateLocale,
   type SpelLocale,
+  type SpelMessages,
 } from '../locales'
 
 export interface UseSpelI18nOptions {
   locale?: SpelLocale
   localeFallback?: SpelLocale
+  messages?: SpelMessages
 }
 
 export function useSpelI18n(options?: UseSpelI18nOptions) {
@@ -23,15 +25,19 @@ export function useSpelI18n(options?: UseSpelI18nOptions) {
   const fallback = computed<SpelLocale>(
     () => options?.localeFallback ?? config?.localeFallback.value ?? getLocaleFallback(),
   )
+  const messages = computed<SpelMessages | undefined>(
+    () => options?.messages ?? config?.messages?.value,
+  )
 
   function t(key: string, values?: Record<string, string | number>): string {
-    return globalT(key, values, locale.value, fallback.value)
+    return globalT(key, values, locale.value, fallback.value, messages.value)
   }
 
   return {
     t,
     locale,
     fallback,
+    messages,
     naiveLocale: computed(() => resolveNaiveLocale(locale.value)),
     naiveDateLocale: computed(() => resolveNaiveDateLocale(locale.value)),
   }
