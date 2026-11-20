@@ -20,6 +20,7 @@ const props = withDefaults(
     authentication?: Record<string, unknown>
     principal?: Record<string, unknown>
     locals?: Record<string, unknown>
+    globals?: Record<string, unknown>
     methods?: import('../../types').CustomMethod[]
     disabled?: boolean
     level?: number
@@ -129,6 +130,7 @@ const fieldOptions = computed<FieldOption[]>(() => {
     result.push(...buildFieldOptions(props.authentication, 'authentication'))
   if (props.principal) result.push(...buildFieldOptions(props.principal, 'principal'))
   if (props.locals) result.push(...buildFieldOptions(props.locals, '#'))
+  if (props.globals) result.push(...buildFieldOptions(props.globals))
   return result
 })
 
@@ -203,7 +205,7 @@ watchEffect(() => {
     return
   }
   try {
-    spelService.setContext(props.authentication, props.principal)
+    spelService.setContext(props.authentication, props.principal, props.globals)
     const result = spelService.eval(exprStr, props.locals)
     leftType.value = getDetailedType(result)
   } catch {
@@ -867,6 +869,7 @@ const listFilterLiteralValue = computed(() => {
               :authentication="authentication"
               :principal="principal"
               :locals="locals"
+              :globals="globals"
               :methods="methods"
               :disabled="disabled"
               :level="level + 1"

@@ -7,6 +7,8 @@ import { NConfigProvider } from 'naive-ui'
 import { darkTheme, lightTheme } from 'naive-ui'
 import { provideSpelConfig, useNaiveLocales } from '../../locales'
 
+defineOptions({ inheritAttrs: false })
+
 const props = withDefaults(defineProps<RuleTreeProps>(), {
   theme: 'light',
   size: 'small',
@@ -41,13 +43,15 @@ const sizePad = computed(() => ({ tiny: 'p-2', small: 'p-3', medium: 'p-5', larg
 </script>
 
 <template>
-  <NConfigProvider :theme="currentTheme" :locale="naiveLocale" :date-locale="naiveDateLocale">
+  <div class="spel-query-builder" style="display: contents">
+  <NConfigProvider v-bind="$attrs" :theme="currentTheme" :locale="naiveLocale" :date-locale="naiveDateLocale">
     <div class="rule-tree-container rounded-[8px] min-h-[200px] transition-colors duration-200" :class="[`theme--${props.theme}`, sizePad]">
       <RuleTreeNode
         :node="modelValue"
         :authentication="authentication"
         :principal="principal"
         :locals="locals"
+        :globals="globals"
         :methods="methods"
         :disabled="disabled"
         :level="0"
@@ -60,6 +64,7 @@ const sizePad = computed(() => ({ tiny: 'p-2', small: 'p-3', medium: 'p-5', larg
       />
     </div>
   </NConfigProvider>
+  </div>
 </template>
 
 <style scoped>

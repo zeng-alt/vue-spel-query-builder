@@ -7,9 +7,11 @@ import { useSpelEditor, useSpelI18n } from '../../composables'
 import type { SpelEditorProps, SpelEditorEmits, SpelEditorInstance, ComponentSize } from '../../types'
 import { DARK, LIGHT } from './spel-theme'
 import { buildEntries, buildTypeMap, buildArrayMeta, buildStringMethodEntries, buildArrayMethodEntries, buildFilterFieldEntries, resolveFieldPath } from './spel-completions'
-import { injectAutocompleteStyle, getTokenAt } from './spel-autocomplete-style'
+import { getTokenAt } from './spel-autocomplete-style'
 import { buildExtensions, buildHoverTooltipDom } from './spel-autocomplete-ext'
 import type { SpelEntry, ThemeTokens, ElementField } from './spel-types'
+
+defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(defineProps<SpelEditorProps>(), { theme: 'dark', size: 'small', locale: 'zh', localeFallback: 'zh' })
 const emit = defineEmits<SpelEditorEmits>()
@@ -26,7 +28,6 @@ const externalChange = Annotation.define<boolean>()
 
 const isDark = computed(() => (props.theme ?? 'dark') === 'dark')
 const T = computed<ThemeTokens>(() => isDark.value ? DARK : LIGHT)
-watch(isDark, () => injectAutocompleteStyle(T.value), { immediate: true })
 
 const sz = computed(() => props.size ?? 'small')
 const sf: Record<ComponentSize, number> = { tiny: 12, small: 13, medium: 14, large: 15 }
@@ -69,6 +70,7 @@ const cStyle = computed(() => {
 const A = () => props.authentication
 const B = () => props.principal
 const L = () => props.locals
+const G = () => props.globals
 const M = () => props.methods
 
 const toO = (e: SpelEntry[], p: string) => {
@@ -87,7 +89,7 @@ function fieldO(r: ElementField, pfx: string, part: string) {
 }
 
 function filterCtx(ap: string, inside: string, pos: number) {
-  const meta = buildArrayMeta(A(), B(), L())[ap]
+  const meta = buildArrayMeta(A(), B(), L(), G())[ap]
   if (!meta) return null
   const di = inside.lastIndexOf('.')
   if (di >= 0) {
@@ -115,6 +117,7 @@ const extensions = computed(() => {
   void A()
   void B()
   void L()
+  void G()
   void M()
   const source: import('@codemirror/autocomplete').CompletionSource = (ctx) => {
     const word = ctx.matchBefore(/[#a-zA-Z_][\w#.]*/)
@@ -133,15 +136,15 @@ const extensions = computed(() => {
     if (di > 0) {
       const base = text.slice(0, di)
       const part = text.slice(di + 1)
-      const type = buildTypeMap(A(), B(), L())[base]
+      const type = buildTypeMap(A(), B(), L(), G())[base]
       if (type === 'string') return { from: word.from + di + 1, options: toO(buildStringMethodEntries(t), part) }
       if (type === 'array') {
-        const am = buildArrayMeta(A(), B(), L())[base]
+        const am = buildArrayMeta(A(), B(), L(), G())[base]
         return { from: word.from + di + 1, options: toO(buildArrayMethodEntries(am, t), part) }
       }
     }
     const lower = text.toLowerCase()
-    const opts = buildEntries(A(), B(), L(), M(), t).filter(e => e.label.toLowerCase().startsWith(lower))
+    const opts = buildEntries(A(), B(), L(), M(), t, G()).filter(e => e.label.toLowerCase().startsWith(lower))
     return {
       from: word.from,
       options: opts.map(e => {
@@ -154,7 +157,7 @@ const extensions = computed(() => {
   const tooltip = hoverTooltip((view, pos) => {
     const token = getTokenAt(view.state.doc, pos)
     if (!token) return null
-    const entry = buildEntries(A(), B(), L(), M(), t).find(e => e.label === token.text)
+    const entry = buildEntries(A(), B(), L(), M(), t, G()).find(e => e.label === token.text)
     if (!entry) return null
     return { pos: token.from, end: token.to, above: true, create: () => ({ dom: buildHoverTooltipDom(entry, T.value) }) }
   }, { hoverTime: 300 })
@@ -209,7 +212,8 @@ defineExpose<SpelEditorInstance>({ getValue, setValue, validate: handleValidate,
 </script>
 
 <template>
-  <div class="rounded-lg overflow-hidden shadow-lg flex flex-col"
+  <div class="spel-query-builder" style="display: contents">
+  <div v-bind="$attrs" class="rounded-lg overflow-hidden shadow-lg flex flex-col"
     :class="[isDark ? 'border-gray-700' : 'border-gray-200']"
     :style="[cStyle, { borderWidth: '1px', borderStyle: 'solid' }]">
     <div class="flex items-center justify-between select-none" :class="hPC"
@@ -242,5 +246,6 @@ defineExpose<SpelEditorInstance>({ getValue, setValue, validate: handleValidate,
         </svg> {{ validation.error }}
       </div>
     </Transition>
+  </div>
   </div>
 </template>

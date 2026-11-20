@@ -96,7 +96,7 @@ export function useRuleTree(
   }
 
   const run = (props: RuleTreeProps, sepl: string) => {
-    spelService.setContext(props.authentication, props.principal)
+    spelService.setContext(props.authentication, props.principal, props.globals)
     spelService.setMethods(props.methods)
     return spelService.eval(sepl, props.locals)
   }

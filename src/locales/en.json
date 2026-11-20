@@ -65,6 +65,7 @@
     "countLte": "count less than or equal"
   },
   "completions": {
+    "globalField": "Root context field",
     "authentication": "Authentication",
     "authenticationDesc": "Current user's authentication information.",
     "authenticationProperty": "authentication property",

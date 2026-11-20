@@ -9,6 +9,7 @@ export function buildEntries(
   locals?: Record<string, unknown>,
   methods?: CustomMethod[],
   t: TranslateFn = (key) => key,
+  globals?: Record<string, unknown>,
 ): SpelEntry[] {
   const list: SpelEntry[] = []
   if (authentication) {
@@ -148,6 +149,16 @@ export function buildEntries(
       })
     }
   }
+  function appendGlobals(object: Record<string, unknown>, prefix = '') {
+    for (const [name, value] of Object.entries(object)) {
+      const path = prefix ? `${prefix}.${name}` : name
+      list.push({ label: path, type: 'property', detail: t('completions.globalField'), desc: path })
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        appendGlobals(value as Record<string, unknown>, path)
+      }
+    }
+  }
+  if (globals) appendGlobals(globals)
   return list
 }
 
@@ -155,7 +166,7 @@ export function buildTypeMap(
   authentication?: Record<string, unknown>,
   principal?: Record<string, unknown>,
   locals?: Record<string, unknown>,
-  _methods?: CustomMethod[],
+  globals?: Record<string, unknown>,
 ): Record<string, string> {
   const map: Record<string, string> = {}
   function walk(obj: unknown, prefix: string) {
@@ -174,6 +185,7 @@ export function buildTypeMap(
   }
   if (authentication) walk(authentication, 'authentication')
   if (principal) walk(principal, 'principal')
+  if (globals) walk(globals, '')
   if (locals) {
     for (const key of Object.keys(locals)) {
       const fp = `#${key}`
@@ -215,6 +227,7 @@ export function buildArrayMeta(
   authentication?: Record<string, unknown>,
   principal?: Record<string, unknown>,
   locals?: Record<string, unknown>,
+  globals?: Record<string, unknown>,
 ): Record<string, ArrayMeta> {
   const meta: Record<string, ArrayMeta> = {}
   function walkArr(obj: unknown, prefix: string) {
@@ -233,6 +246,7 @@ export function buildArrayMeta(
   }
   if (authentication) walkArr(authentication, 'authentication')
   if (principal) walkArr(principal, 'principal')
+  if (globals) walkArr(globals, '')
   if (locals) {
     for (const key of Object.keys(locals)) {
       const fp = `#${key}`

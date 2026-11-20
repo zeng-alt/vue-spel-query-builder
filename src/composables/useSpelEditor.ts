@@ -35,7 +35,7 @@ export function useSpelEditor(
   const run = async (): Promise<unknown> => {
     try {
       const expression = internalValue.value
-      spelService.setContext(props.authentication, props.principal)
+      spelService.setContext(props.authentication, props.principal, props.globals)
       spelService.setMethods(props.methods)
       const result = spelService.eval(expression, props.locals)
 

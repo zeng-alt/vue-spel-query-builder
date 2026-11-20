@@ -4,6 +4,8 @@
 
 Vue 3 SpEL（Spring Expression Language）查询构建器 - 提供在线编辑器与可视化规则树双模式，支持通过代码或可视化界面构建 SpEL 布尔表达式。
 
+组件样式通过 CSS `@scope` 限制在设计器内部，请使用支持 `@scope` 的浏览器。
+
 ## 特性
 
 - **SpEL 编辑器**：基于 CodeMirror 的代码编辑器，支持语法高亮、上下文自动补全、类型提示和表达式执行
@@ -179,6 +181,7 @@ const handleChange = (rule: RuleNode) => {
 | `authentication` | `Record<string, any>`                      | `{}`      | 认证上下文，字段路径以 `authentication.` 开头 |
 | `principal`      | `Record<string, any>`                      | `{}`      | 主体上下文，字段路径以 `principal.` 开头      |
 | `locals`         | `Record<string, any>`                      | `{}`      | 本地变量，字段路径以 `#` 开头                 |
+| `globals`        | `Record<string, unknown>`                  | `{}`      | 根上下文字段，可直接使用 `resource.owner` 等路径 |
 | `methods`        | `CustomMethod[]`                           | `[]`      | 自定义方法，编辑器自动补全并可在表达式中调用 |
 | `height`         | `string \| number`                         | `300`     | 编辑器高度，像素值或 CSS 高度字符串           |
 | `theme`          | `'light' \| 'dark'`                        | `'dark'`  | 主题样式                                      |
@@ -226,6 +229,7 @@ editorRef.value.focus()
 | `authentication` | `Record<string, any>`                      | `{}`      | 认证上下文，字段路径以 `authentication.` 开头 |
 | `principal`      | `Record<string, any>`                      | `{}`      | 主体上下文，字段路径以 `principal.` 开头      |
 | `locals`         | `Record<string, any>`                      | `{}`      | 本地变量，字段路径以 `#` 开头                 |
+| `globals`        | `Record<string, unknown>`                  | `{}`      | 根上下文字段，可直接使用 `resource.owner` 等路径 |
 | `methods`        | `CustomMethod[]`                           | `[]`      | 自定义方法，可用于函数表达式节点             |
 | `theme`          | `'light' \| 'dark'`                        | `'light'` | 主题样式                                      |
 | `size`           | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | 组件尺寸                                      |

@@ -65,6 +65,7 @@
     "countLte": "数量小于等于"
   },
   "completions": {
+    "globalField": "根上下文字段",
     "authentication": "用户认证信息",
     "authenticationDesc": "存储当前登录用户的认证信息。",
     "authenticationProperty": "authentication 属性",

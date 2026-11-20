@@ -55,7 +55,7 @@ function unoLibCss(): Plugin {
         }
         const { css } = await uno.generate(tokens)
         if (!css) return
-        await writeFile(cssFile, `${existing}\n${UNO_MARK}\n${css}`, 'utf-8')
+        await writeFile(cssFile, `@scope (.spel-query-builder) {\n${existing}\n${UNO_MARK}\n${css}\n}`, 'utf-8')
       } catch (error) {
         console.error('[unocss:lib-css] failed to inject styles:', error)
       }

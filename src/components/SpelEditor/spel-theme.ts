@@ -168,6 +168,23 @@ export function createSpelTheme(T: ThemeTokens, isDark: boolean, fontSize: numbe
       '.cm-cursor': { borderLeftColor: T.cursor, borderLeftWidth: '2px' },
       '.cm-selectionBackground': { backgroundColor: `${T.selectionBg} !important` },
       '&.cm-focused .cm-selectionBackground': { backgroundColor: `${T.selectionBg} !important` },
+      '.cm-tooltip-autocomplete': {
+        background: `${T.acBg} !important`,
+        border: `1px solid ${T.acBorder} !important`,
+        borderRadius: '8px !important',
+      },
+      '.cm-tooltip-autocomplete .cm-completionItem': {
+        display: 'flex !important',
+        gap: '8px !important',
+        padding: '7px 10px !important',
+        cursor: 'pointer !important',
+        color: `${T.acItemFg} !important`,
+      },
+      '.cm-tooltip-autocomplete .cm-completionItem:hover': { background: `${T.acItemHoverBg} !important` },
+      '.cm-completionIcon.cm-variable': { background: T.acIconVarBg, color: T.acIconVar },
+      '.cm-completionIcon.cm-property': { background: T.acIconPropBg, color: T.acIconProp },
+      '.cm-completionLabel': { fontFamily: "'Fira Code',monospace !important", fontSize: '13px !important', color: `${T.acLabel} !important` },
+      '.cm-completionDetail': { marginLeft: 'auto !important', fontSize: '11px !important', color: `${T.acDetail} !important`, borderLeft: `1px solid ${T.acDetailBorder} !important` },
       '.cm-activeLine': { backgroundColor: T.activeLine },
       '.cm-gutters': {
         backgroundColor: T.gutterBg,

@@ -4,6 +4,8 @@
 
 A Vue 3 SpEL (Spring Expression Language) query builder that ships a code editor and a visual rule tree, so you can build boolean SpEL expressions either by code or through a visual interface.
 
+Component styles are isolated using CSS `@scope`; use a browser that supports `@scope`.
+
 ## Features
 
 - **SpEL Editor**: a CodeMirror-based code editor with syntax highlighting, context-aware autocomplete, type hints, and expression execution
@@ -179,6 +181,7 @@ const handleChange = (rule: RuleNode) => {
 | `authentication`   | `Record<string, any>`                      | `{}`      | Authentication context, field paths start with `authentication.` |
 | `principal`        | `Record<string, any>`                      | `{}`      | Principal context, field paths start with `principal.` |
 | `locals`           | `Record<string, any>`                      | `{}`      | Local variables, field paths start with `#` |
+| `globals`        | `Record<string, unknown>`                  | `{}`      | Root context fields, accessed directly as `resource.owner` |
 | `methods`          | `CustomMethod[]`                           | `[]`      | Custom methods, auto-completed by the editor and callable in expressions |
 | `height`           | `string \| number`                         | `300`     | Editor height, pixel value or CSS height string |
 | `theme`            | `'light' \| 'dark'`                        | `'dark'`  | Theme style                                    |
@@ -226,6 +229,7 @@ editorRef.value.focus()
 | `authentication` | `Record<string, any>`                      | `{}`      | Authentication context, field paths start with `authentication.` |
 | `principal`      | `Record<string, any>`                      | `{}`      | Principal context, field paths start with `principal.` |
 | `locals`         | `Record<string, any>`                      | `{}`      | Local variables, field paths start with `#` |
+| `globals`        | `Record<string, unknown>`                  | `{}`      | Root context fields, accessed directly as `resource.owner` |
 | `methods`        | `CustomMethod[]`                           | `[]`      | Custom methods, usable in function expression nodes |
 | `theme`          | `'light' \| 'dark'`                        | `'light'` | Theme style                                    |
 | `size`           | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | Component size                                 |

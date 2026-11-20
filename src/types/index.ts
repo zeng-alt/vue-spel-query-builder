@@ -27,6 +27,8 @@ export interface SpelEditorProps {
   authentication?: Record<string, unknown>
   principal?: Record<string, unknown>
   locals?: Record<string, unknown>
+  /** Additional root namespaces, such as resource or env. */
+  globals?: Record<string, unknown>
   methods?: CustomMethod[]
   disabled?: boolean
   readonly?: boolean
@@ -131,6 +133,8 @@ export interface RuleTreeProps {
   authentication?: Record<string, unknown>
   principal?: Record<string, unknown>
   locals?: Record<string, unknown>
+  /** Additional root namespaces, such as resource or env. */
+  globals?: Record<string, unknown>
   methods?: CustomMethod[]
   disabled?: boolean
   theme?: 'light' | 'dark'

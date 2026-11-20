@@ -7,8 +7,9 @@ class SpelService {
   private context: EvaluationContext | null = null
   private methods?: Record<string, (...args: unknown[]) => unknown>
 
-  setContext(authentication?: unknown, principal?: unknown) {
+  setContext(authentication?: unknown, principal?: unknown, globals?: Record<string, unknown>) {
     this.context = StandardContext.create(authentication, principal)
+    if (globals) Object.assign(this.context, globals)
   }
 
   /**
